@@ -2,8 +2,10 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useSafetyTopics } from '../../hooks/useSafetyTopics';
+import { useToast } from '../../hooks/useToast';
 import Header from '../../components/Header';
 import Modal from '../../components/Modal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import { SafetyTopic, ChangeLog } from '../../types';
 import SpinnerIcon from '../../components/icons/SpinnerIcon';
 import SearchIcon from '../../components/icons/SearchIcon';
@@ -20,9 +22,13 @@ import DocumentTextIcon from '../../components/icons/DocumentTextIcon';
 const TopicManagementPage: React.FC = () => {
     const { user, logout } = useAuth();
     const { safetyTopics, addSafetyTopic, updateSafetyTopic, toggleSafetyTopicStatus, loading } = useSafetyTopics();
+    const { showToast } = useToast();
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [topicToDeactivate, setTopicToDeactivate] = useState<SafetyTopic | null>(null);
+
     const [editingTopic, setEditingTopic] = useState<SafetyTopic | null>(null);
     const [viewingHistoryFor, setViewingHistoryFor] = useState<SafetyTopic | null>(null);
     const [topicName, setTopicName] = useState('');
@@ -47,6 +53,7 @@ const TopicManagementPage: React.FC = () => {
     const handleAddTopic = (e: React.FormEvent) => {
         e.preventDefault();
         addSafetyTopic(topicName, topicContent);
+        showToast(`Topic "${topicName}" added successfully.`, { type: 'success' });
         setTopicName('');
         setTopicContent('');
         setIsAddModalOpen(false);
@@ -56,12 +63,30 @@ const TopicManagementPage: React.FC = () => {
         e.preventDefault();
         if (editingTopic) {
             updateSafetyTopic(editingTopic.id, topicName, topicContent, newPdfFile || undefined);
+            showToast(`Topic "${topicName}" updated successfully.`, { type: 'success' });
         }
         setTopicName('');
         setTopicContent('');
         setNewPdfFile(null);
         setEditingTopic(null);
         setIsEditModalOpen(false);
+    };
+    
+    const handleToggleStatus = (topic: SafetyTopic) => {
+        if (topic.status === 'active') {
+            setTopicToDeactivate(topic);
+        } else {
+            toggleSafetyTopicStatus(topic.id);
+            showToast(`"${topic.name}" has been activated.`, { type: 'success' });
+        }
+    };
+
+    const confirmDeactivation = () => {
+        if (topicToDeactivate) {
+            toggleSafetyTopicStatus(topicToDeactivate.id);
+            showToast(`"${topicToDeactivate.name}" has been deactivated.`, { type: 'info' });
+            setTopicToDeactivate(null);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,10 +96,11 @@ const TopicManagementPage: React.FC = () => {
             reader.onload = (event) => {
                 const dataUrl = event.target?.result as string;
                 setNewPdfFile({ name: file.name, dataUrl });
+                showToast(`PDF "${file.name}" ready for upload.`, { type: 'info' });
             };
             reader.readAsDataURL(file);
         } else if (file) {
-            alert('Please select a valid PDF file.');
+            showToast('Please select a valid PDF file.', { type: 'error' });
         }
     };
 
@@ -301,7 +327,7 @@ const TopicManagementPage: React.FC = () => {
                                                 <button onClick={() => openEditModal(topic)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="Edit Topic">
                                                     <PencilSquareIcon className="h-4 w-4" />
                                                 </button>
-                                                <button onClick={() => toggleSafetyTopicStatus(topic.id)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
+                                                <button onClick={() => handleToggleStatus(topic)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
                                                     {topic.status === 'active' ? 'Deactivate' : 'Activate'}
                                                 </button>
                                             </td>
@@ -325,6 +351,16 @@ const TopicManagementPage: React.FC = () => {
             <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Change History for ${viewingHistoryFor?.name}`}>
                 {renderHistoryModal()}
             </Modal>
+
+             <ConfirmationModal
+                isOpen={!!topicToDeactivate}
+                onClose={() => setTopicToDeactivate(null)}
+                onConfirm={confirmDeactivation}
+                title="Deactivate Safety Topic"
+                confirmText="Deactivate"
+            >
+                Are you sure you want to deactivate the topic "<span className="font-bold">{topicToDeactivate?.name}</span>"? It will no longer be available for selection in new talks.
+            </ConfirmationModal>
         </div>
     );
 };

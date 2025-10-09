@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { TalkRecord, PendingCrewMember } from '../types';
+import { TalkRecord, PendingCrewMember, ChangeLog } from '../types';
 import { MOCK_TALK_RECORDS } from '../constants';
 import { getAll, put, deleteItem, get } from '../utils/db';
 
@@ -10,7 +10,8 @@ const PENDING_CREW_STORE = 'pendingCrewMembers';
 interface TalkRecordsContextType {
   records: TalkRecord[];
   loading: boolean;
-  addRecord: (record: Omit<TalkRecord, 'id' | 'syncStatus'>) => void;
+  addRecord: (record: Omit<TalkRecord, 'id' | 'syncStatus' | 'recordStatus' | 'history' | 'flag'>) => void;
+  updateTalkRecord: (talkId: string, updates: Partial<TalkRecord>, changeLogEntry: ChangeLog) => Promise<void>;
 }
 
 const TalkRecordsContext = createContext<TalkRecordsContextType | undefined>(undefined);
@@ -33,7 +34,7 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       const pendingRecords = await getAll<TalkRecord>(PENDING_SUBMISSIONS_STORE);
       
-      setRecords([...pendingRecords, ...syncedRecords]);
+      setRecords([...pendingRecords, ...syncedRecords].sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
 
     } catch (error) {
       console.error("Failed to load records from IndexedDB, falling back to initial data.", error);
@@ -91,20 +92,49 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   }, [loadData]);
 
+  const updateTalkRecord = useCallback(async (talkId: string, updates: Partial<TalkRecord>, changeLogEntry: ChangeLog) => {
+    const recordToUpdate = records.find(r => r.id === talkId);
+    if (!recordToUpdate) {
+        console.error("Record not found for update:", talkId);
+        return;
+    }
 
-  const addRecord = useCallback(async (recordData: Omit<TalkRecord, 'id' | 'syncStatus'>) => {
+    const updatedRecord: TalkRecord = {
+        ...recordToUpdate,
+        ...updates,
+        history: [...recordToUpdate.history, changeLogEntry],
+    };
+
+    // Determine which store it's in
+    const storeName = updatedRecord.syncStatus === 'pending' ? PENDING_SUBMISSIONS_STORE : TALK_RECORDS_STORE;
+    await put(storeName, updatedRecord);
+
+    // Update state
+    setRecords(prev => prev.map(r => r.id === talkId ? updatedRecord : r));
+  }, [records]);
+
+
+  const addRecord = useCallback(async (recordData: Omit<TalkRecord, 'id' | 'syncStatus' | 'recordStatus' | 'history' | 'flag'>) => {
+    const now = new Date().toISOString();
     const newRecordId = crypto.randomUUID();
     const newRecord: TalkRecord = {
       ...recordData,
       id: newRecordId,
       syncStatus: 'pending',
+      recordStatus: 'submitted',
+      history: [{
+        timestamp: now,
+        action: 'CREATED',
+        details: 'Talk record submitted by foreman.',
+        actor: recordData.foremanName,
+      }],
     };
     
     // Save to the pending queue
     await put(PENDING_SUBMISSIONS_STORE, newRecord);
 
     // Update state for immediate UI feedback
-    setRecords(prevRecords => [newRecord, ...prevRecords]);
+    setRecords(prevRecords => [newRecord, ...prevRecords].sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
 
     // Check for any "guest" crew members and add them to the pending approval queue
     const guestSignatures = recordData.crewSignatures.filter(sig => sig.isGuest);
@@ -142,7 +172,7 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
-  const value = { records, loading, addRecord };
+  const value = { records, loading, addRecord, updateTalkRecord };
 
   return React.createElement(TalkRecordsContext.Provider, { value }, children);
 };

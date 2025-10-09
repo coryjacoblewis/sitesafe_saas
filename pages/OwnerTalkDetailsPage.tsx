@@ -2,29 +2,82 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTalkRecords } from '../hooks/useTalkRecords';
+import { useToast } from '../hooks/useToast';
 import Header from '../components/Header';
 import FeedbackModal from '../components/FeedbackModal';
-import { FeedbackSubmission } from '../types';
+import Modal from '../components/Modal';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { FeedbackSubmission, ChangeLog, TalkRecord } from '../types';
 import ClipboardListIcon from '../components/icons/ClipboardListIcon';
 import DownloadIcon from '../components/icons/DownloadIcon';
 import DocumentTextIcon from '../components/icons/DocumentTextIcon';
+import FlagIcon from '../components/icons/FlagIcon';
+import InformationCircleIcon from '../components/icons/InformationCircleIcon';
+// FIX: Import the CheckIcon component to resolve the 'Cannot find name' error.
+import CheckIcon from '../components/icons/CheckIcon';
 
 const OwnerTalkDetailsPage: React.FC = () => {
   const { talkId } = useParams<{ talkId: string }>();
-  const { records } = useTalkRecords();
+  const { records, updateTalkRecord } = useTalkRecords();
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
+
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
+  const [talkToResolve, setTalkToResolve] = useState<TalkRecord | null>(null);
 
   const talk = records.find(record => record.id === talkId);
 
   const handleFeedbackSubmit = (feedback: FeedbackSubmission) => {
     console.log('Feedback submitted:', JSON.stringify(feedback, null, 2));
-    alert('Thank you for your feedback!');
     setIsFeedbackModalOpen(false);
   };
   
   const handleDownload = () => {
-    alert(`Initiating PDF download for talk record: ${talkId}`);
+    showToast(`Initiating PDF download for talk record...`);
+  };
+
+  const handleFlagSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (talk && user && flagReason.trim()) {
+        const updates: Partial<TalkRecord> = {
+            recordStatus: 'flagged',
+            flag: {
+                flaggedBy: user.email,
+                flaggedAt: new Date().toISOString(),
+                reason: flagReason.trim(),
+            }
+        };
+        const changeLog: ChangeLog = {
+            timestamp: new Date().toISOString(),
+            action: 'FLAGGED',
+            details: `Report flagged for correction. Reason: "${flagReason.trim()}"`,
+            actor: user.email,
+        };
+        await updateTalkRecord(talk.id, updates, changeLog);
+        showToast("Report has been flagged for correction.", { type: 'success' });
+        setFlagReason('');
+        setIsFlagModalOpen(false);
+    }
+  };
+
+  const handleConfirmResolve = async () => {
+     if (talkToResolve && user) {
+        const updates: Partial<TalkRecord> = {
+            recordStatus: 'submitted',
+            flag: undefined,
+        };
+        const changeLog: ChangeLog = {
+            timestamp: new Date().toISOString(),
+            action: 'FLAG_RESOLVED',
+            details: `Flag was manually resolved by manager.`,
+            actor: user.email,
+        };
+        await updateTalkRecord(talkToResolve.id, updates, changeLog);
+        showToast("Flag has been resolved.", { type: 'success' });
+        setTalkToResolve(null);
+     }
   };
   
   if (!talk) {
@@ -62,16 +115,44 @@ const OwnerTalkDetailsPage: React.FC = () => {
                         <h1 className="text-3xl font-bold text-gray-900">{talk.topic}</h1>
                         <p className="mt-1 text-sm text-gray-600">Conducted by {talk.foremanName} on {new Date(talk.dateTime).toLocaleDateString()}</p>
                     </div>
-                    <div className="mt-4 md:mt-0 flex space-x-3 flex-shrink-0">
-                        <Link to="/dashboard" className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <div className="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
+                        <Link to="/dashboard" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Back to Dashboard
                         </Link>
+                        {talk.recordStatus !== 'flagged' ? (
+                            <button onClick={() => setIsFlagModalOpen(true)} className="inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600">
+                                <FlagIcon className="h-4 w-4" />
+                                <span>Flag for Correction</span>
+                            </button>
+                        ) : (
+                            <button onClick={() => setTalkToResolve(talk)} className="inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600">
+                                <CheckIcon className="h-4 w-4" />
+                                <span>Resolve Flag</span>
+                            </button>
+                        )}
                         <button onClick={handleDownload} className="inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark">
                             <DownloadIcon className="h-4 w-4" />
                             <span>Download Record</span>
                         </button>
                     </div>
                 </div>
+
+                {talk.recordStatus === 'flagged' && talk.flag && (
+                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <InformationCircleIcon className="h-5 w-5 text-yellow-500" />
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm font-bold text-yellow-900">This report is flagged for correction.</p>
+                                <p className="mt-1 text-sm text-yellow-800">
+                                    Flagged by <span className="font-medium">{talk.flag.flaggedBy}</span> on {new Date(talk.flag.flaggedAt).toLocaleDateString()}:
+                                    <span className="italic"> "{talk.flag.reason}"</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                     <div className="md:col-span-1 space-y-4">
@@ -146,6 +227,40 @@ const OwnerTalkDetailsPage: React.FC = () => {
             onSubmit={handleFeedbackSubmit}
             userEmail={user?.email}
         />
+        <Modal isOpen={isFlagModalOpen} onClose={() => setIsFlagModalOpen(false)} title="Flag Report for Correction">
+             <form onSubmit={handleFlagSubmit}>
+                <p className="text-sm text-gray-600 mb-4">The foreman will be notified that this report needs correction. Please provide a clear reason.</p>
+                <label htmlFor="flagReason" className="block text-sm font-medium text-gray-700">
+                    Reason for Flagging
+                </label>
+                <div className="mt-1">
+                    <textarea
+                        id="flagReason"
+                        name="flagReason"
+                        rows={3}
+                        required
+                        value={flagReason}
+                        onChange={(e) => setFlagReason(e.target.value)}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm bg-white text-gray-900"
+                        placeholder="e.g., Incorrect location selected, missing signature for Bob."
+                        autoFocus
+                    />
+                </div>
+                <div className="mt-4 flex justify-end space-x-2">
+                    <button type="button" onClick={() => setIsFlagModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">Cancel</button>
+                    <button type="submit" disabled={!flagReason.trim()} className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md shadow-sm hover:bg-yellow-600 disabled:bg-gray-400">Flag Report</button>
+                </div>
+            </form>
+        </Modal>
+        <ConfirmationModal
+            isOpen={!!talkToResolve}
+            onClose={() => setTalkToResolve(null)}
+            onConfirm={handleConfirmResolve}
+            title="Resolve Flag"
+            confirmText="Yes, Resolve"
+        >
+            Are you sure you want to manually resolve this flag? This should only be done if the issue has been addressed outside of the amendment process.
+        </ConfirmationModal>
     </div>
   );
 };

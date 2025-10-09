@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FeedbackCategory, FeedbackSubmission } from '../types';
+import { useToast } from '../hooks/useToast';
 import XIcon from './icons/XIcon';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import BugIcon from './icons/BugIcon';
@@ -55,6 +56,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
   const [selectedCategory, setSelectedCategory] = useState<FeedbackCategory | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [allowContact, setAllowContact] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -123,6 +125,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
       },
     };
     onSubmit(submission);
+    showToast('Thank you for your feedback!', { type: 'success' });
   };
 
   const renderCategorySelector = () => (

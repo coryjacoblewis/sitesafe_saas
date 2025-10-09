@@ -6,6 +6,7 @@ import { useTalkRecords } from '../hooks/useTalkRecords';
 import { useSafetyTopics } from '../hooks/useSafetyTopics';
 import { useLocations } from '../hooks/useLocations';
 import { usePendingCrew } from '../hooks/usePendingCrew';
+import { useToast } from '../hooks/useToast';
 import Header from '../components/Header';
 import DownloadIcon from '../components/icons/DownloadIcon';
 import SearchIcon from '../components/icons/SearchIcon';
@@ -21,10 +22,13 @@ import PencilSquareIcon from '../components/icons/PencilSquareIcon';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import Pagination from '../components/Pagination';
 import FeedbackModal from '../components/FeedbackModal';
+import MonthlyTalksChart from '../components/charts/MonthlyTalksChart';
+import TopTopicsChart from '../components/charts/TopTopicsChart';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 
 type SortDirection = 'ascending' | 'descending';
-type SortableKey = 'dateTime' | 'topic' | 'foremanName' | 'location' | 'crewSize' | 'syncStatus';
+type SortableKey = 'dateTime' | 'topic' | 'foremanName' | 'location' | 'crewSize' | 'syncStatus' | 'recordStatus';
 
 interface SortConfig {
   key: SortableKey;
@@ -71,8 +75,8 @@ const ListStatCard: React.FC<{ icon: React.ReactNode; title: string; items: stri
 const PendingApprovals: React.FC<{
   pendingCrew: PendingCrewMember[];
   onApprove: (member: PendingCrewMember) => void;
-  onReject: (member: PendingCrewMember) => void;
-}> = ({ pendingCrew, onApprove, onReject }) => {
+  onRejectClick: (member: PendingCrewMember) => void;
+}> = ({ pendingCrew, onApprove, onRejectClick }) => {
   if (pendingCrew.length === 0) return null;
 
   return (
@@ -92,7 +96,7 @@ const PendingApprovals: React.FC<{
             </div>
             <div className="flex space-x-2">
               <button
-                onClick={() => onReject(member)}
+                onClick={() => onRejectClick(member)}
                 className="p-2 rounded-full text-gray-500 bg-gray-100 hover:bg-red-100 hover:text-red-700 transition-colors"
                 title="Reject"
               >
@@ -113,6 +117,32 @@ const PendingApprovals: React.FC<{
   );
 };
 
+const OwnerEmptyState: React.FC = () => (
+    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6 text-center">
+        <div className="max-w-md mx-auto">
+            <ClipboardListIcon className="w-16 h-16 mx-auto text-gray-300" />
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">Welcome to SiteSafe!</h2>
+            <p className="mt-2 text-sm text-gray-600">
+                This is your central hub for safety compliance. To get started, you'll need to set up your company's data.
+            </p>
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Link to="/admin/crew-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
+                    <UserGroupIcon className="h-8 w-8 text-brand-blue" />
+                    <span className="font-semibold text-gray-700">Add Crew</span>
+                </Link>
+                <Link to="/admin/topic-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
+                    <BookOpenIcon className="h-8 w-8 text-brand-blue" />
+                    <span className="font-semibold text-gray-700">Add Topics</span>
+                </Link>
+                <Link to="/admin/location-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
+                    <MapPinIcon className="h-8 w-8 text-brand-blue" />
+                    <span className="font-semibold text-gray-700">Add Locations</span>
+                </Link>
+            </div>
+        </div>
+    </div>
+);
+
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -120,8 +150,12 @@ const DashboardPage: React.FC = () => {
   const { safetyTopics, loading: topicsLoading } = useSafetyTopics();
   const { locations, loading: locationsLoading } = useLocations();
   const { pendingCrew, approveMember, rejectMember, loading: pendingCrewLoading } = usePendingCrew();
+  const { showToast } = useToast();
   
   const loading = recordsLoading || topicsLoading || locationsLoading || pendingCrewLoading;
+
+  // State for confirmation modals
+  const [memberToReject, setMemberToReject] = useState<PendingCrewMember | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,7 +167,7 @@ const DashboardPage: React.FC = () => {
   const dashboardStats = useMemo(() => {
     if (loading || records.length === 0) {
       return {
-        talksThisMonth: '...',
+        monthlyTalksData: [],
         signaturesThisMonth: '...',
         topTopics: [],
         topForemen: [],
@@ -141,17 +175,36 @@ const DashboardPage: React.FC = () => {
     }
 
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    
+    // Monthly Talks Chart Data
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthlyTalksData: { month: string; count: number }[] = [];
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        monthlyTalksData.push({ month: monthNames[date.getMonth()], count: 0 });
+    }
 
+    const recordsInLastSixMonths = records.filter(r => new Date(r.dateTime) >= sixMonthsAgo);
+    
+    for (const record of recordsInLastSixMonths) {
+        const recordMonth = new Date(record.dateTime).getMonth();
+        const monthIndex = monthlyTalksData.findIndex(d => monthNames.indexOf(d.month) === recordMonth);
+        if (monthIndex > -1) {
+            monthlyTalksData[monthIndex].count++;
+        }
+    }
+
+    // Signatures this month
     const recordsThisMonth = records.filter(r => {
         const recordDate = new Date(r.dateTime);
-        return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+        return recordDate.getMonth() === now.getMonth() && recordDate.getFullYear() === now.getFullYear();
     });
-    
     const signaturesThisMonth = recordsThisMonth.reduce((sum, r) => sum + r.crewSignatures.length, 0);
 
-    const getTopThree = (key: 'topic' | 'foremanName'): string[] => {
+    // Top 3 Topics and Foremen
+    const getTopThree = (key: 'topic' | 'foremanName'): Array<{ name: string; count: number }> => {
       const counts = records.reduce((acc, record) => {
         const value = record[key];
         acc[value] = (acc[value] || 0) + 1;
@@ -161,14 +214,14 @@ const DashboardPage: React.FC = () => {
       return Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(entry => entry[0]);
+        .map(([name, count]) => ({ name, count }));
     };
 
     return {
-        talksThisMonth: recordsThisMonth.length,
+        monthlyTalksData,
         signaturesThisMonth,
         topTopics: getTopThree('topic'),
-        topForemen: getTopThree('foremanName'),
+        topForemen: getTopThree('foremanName').map(f => f.name), // Keep as string array for ListStatCard
     };
   }, [records, loading]);
   
@@ -220,7 +273,8 @@ const DashboardPage: React.FC = () => {
       startDate: '',
       endDate: '',
     });
-  }, []);
+    showToast('Filters have been reset.');
+  }, [showToast]);
 
 
   const requestSort = (key: SortableKey) => {
@@ -272,6 +326,10 @@ const DashboardPage: React.FC = () => {
               aValue = a.syncStatus || 'synced';
               bValue = b.syncStatus || 'synced';
               break;
+          case 'recordStatus':
+             aValue = a.recordStatus;
+             bValue = b.recordStatus;
+             break;
           default:
             aValue = a[sortConfig.key];
             bValue = b[sortConfig.key];
@@ -296,17 +354,12 @@ const DashboardPage: React.FC = () => {
 
   const totalItems = sortedAndFilteredRecords.length;
 
-  // Adjust itemsPerPage if it's larger than the total number of items after filtering.
-  // This typically happens when "All" was selected or a large page size was chosen
-  // before filters were applied. Setting it to totalItems ensures the dropdown
-  // reflects "All" correctly and avoids showing empty pages.
   useEffect(() => {
     if (totalItems > 0 && itemsPerPage > totalItems) {
       setItemsPerPage(totalItems);
     }
   }, [totalItems, itemsPerPage]);
 
-  // Reset to page 1 when filters or items per page change
   useEffect(() => {
     setCurrentPage(1);
   }, [totalItems, itemsPerPage]);
@@ -358,18 +411,30 @@ const DashboardPage: React.FC = () => {
   }, [paginatedRecords, selectedRecordIds]);
 
   const handleDownload = (recordId: string) => {
-    alert(`Initiating PDF download for talk record: ${recordId}`);
+    showToast(`Initiating PDF download for talk record...`);
   };
 
   const handleBulkDownload = () => {
-    const selectedIds = Array.from(selectedRecordIds).join(', ');
-    alert(`Initiating bulk PDF download for ${selectedRecordIds.size} selected record(s):\n${selectedIds}`);
+    showToast(`Initiating bulk PDF download for ${selectedRecordIds.size} record(s).`);
     setSelectedRecordIds(new Set());
   };
+
+  const handleApproveMember = (member: PendingCrewMember) => {
+    approveMember(member);
+    showToast(`${member.name} has been approved and added to the crew roster.`, { type: 'success' });
+  };
   
+  const handleConfirmReject = () => {
+    if (memberToReject) {
+        rejectMember(memberToReject);
+        showToast(`${memberToReject.name} has been rejected.`, { type: 'info' });
+        setMemberToReject(null);
+    }
+  };
+
   const handleFeedbackSubmit = (feedback: FeedbackSubmission) => {
     console.log('Feedback submitted:', JSON.stringify(feedback, null, 2));
-    alert('Thank you for your feedback!');
+    // The success toast is now shown inside the FeedbackModal itself
     setIsFeedbackModalOpen(false);
   };
 
@@ -424,255 +489,265 @@ const DashboardPage: React.FC = () => {
                   <span>Manage Locations</span>
                 </Link>
               </div>
-            </div>
-          <PendingApprovals pendingCrew={pendingCrew} onApprove={approveMember} onReject={rejectMember} />
+          </div>
           
-           {/* At-a-Glance Summary */}
-          <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">At-a-Glance Summary</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard 
-                      icon={<ClipboardListIcon className="h-6 w-6" />}
-                      title="Total Talks"
-                      value={dashboardStats.talksThisMonth}
-                      description="This Month"
-                  />
-                   <StatCard 
-                      icon={<PencilSquareIcon className="h-6 w-6" />}
-                      title="Total Signatures"
-                      value={dashboardStats.signaturesThisMonth}
-                      description="This Month"
-                  />
-                   <ListStatCard 
-                      icon={<BookOpenIcon className="h-6 w-6" />}
-                      title="Top 3 Topics"
-                      items={dashboardStats.topTopics}
-                      description="All Time"
-                  />
-                   <ListStatCard 
-                      icon={<UserGroupIcon className="h-6 w-6" />}
-                      title="Top 3 Foremen"
-                      items={dashboardStats.topForemen}
-                      description="By Talks Conducted"
-                  />
-              </div>
-          </div>
-
-
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
-            <div className="pb-5">
-              <h2 className="text-lg font-semibold text-gray-800">Toolbox Talk Records</h2>
-              <p className="mt-1 text-sm text-gray-600">Review, filter, and download submitted safety talk reports.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-               <div className="grid grid-cols-2 gap-2">
-                  <div>
-                      <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start</label>
-                      <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
-                  </div>
-                  <div>
-                      <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End</label>
-                      <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
-                  </div>
-                </div>
-               <div>
-                  <label htmlFor="Topic-multiselect" className="block text-sm font-medium text-gray-700">Topic</label>
-                  <MultiSelectDropdown
-                    label="Topic"
-                    options={uniqueTopics}
-                    selectedValues={filters.topic}
-                    onChange={(values) => handleMultiSelectChange('topic', values)}
-                    disabled={loading}
-                    placeholder="All Topics"
-                  />
-               </div>
-               <div>
-                  <label htmlFor="Foreman-multiselect" className="block text-sm font-medium text-gray-700">Foreman</label>
-                  <MultiSelectDropdown
-                    label="Foreman"
-                    options={uniqueForemen}
-                    selectedValues={filters.foreman}
-                    onChange={(values) => handleMultiSelectChange('foreman', values)}
-                    disabled={loading}
-                    placeholder="All Foremen"
-                  />
-               </div>
-               <div>
-                  <label htmlFor="Location-multiselect" className="block text-sm font-medium text-gray-700">Location</label>
-                  <MultiSelectDropdown
-                    label="Location"
-                    options={uniqueLocations}
-                    selectedValues={filters.location}
-                    onChange={(values) => handleMultiSelectChange('location', values)}
-                    disabled={loading}
-                    placeholder="All Locations"
-                  />
-               </div>
-               <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label htmlFor="minCrew" className="block text-sm font-medium text-gray-700">Min Crew</label>
-                    <select
-                      name="minCrew"
-                      id="minCrew"
-                      value={filters.minCrew}
-                      onChange={handleFilterChange}
-                      className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
-                      style={{ colorScheme: 'light' }}
-                      disabled={loading}
-                    >
-                      <option value="">Any</option>
-                      {uniqueCrewSizes.map(size => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="maxCrew" className="block text-sm font-medium text-gray-700">Max Crew</label>
-                    <select
-                      name="maxCrew"
-                      id="maxCrew"
-                      value={filters.maxCrew}
-                      onChange={handleFilterChange}
-                      className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
-                      style={{ colorScheme: 'light' }}
-                      disabled={loading}
-                    >
-                      <option value="">Any</option>
-                      {uniqueCrewSizes.map(size => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                 <div className="sm:col-span-2 lg:col-span-5 flex items-end justify-end space-x-2 pt-4 lg:pt-0">
-                    <button 
-                        onClick={handleBulkDownload}
-                        disabled={selectedRecordIds.size === 0 || loading}
-                        className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      <DownloadIcon className="h-4 w-4" />
-                      <span>Download Selected ({selectedRecordIds.size})</span>
-                    </button>
-                    <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
-                      <ResetIcon className="h-4 w-4" />
-                      <span>Reset Filters</span>
-                    </button>
+          {loading ? (
+            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
+                <div className="flex flex-col items-center justify-center text-gray-500 py-16">
+                    <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue" />
+                    <h3 className="text-lg font-semibold text-gray-700">Loading Dashboard...</h3>
+                    <p className="text-sm">Please wait while we fetch the latest data.</p>
                 </div>
             </div>
-          </div>
-
-          <div className="shadow border-b border-gray-200 sm:rounded-lg bg-white">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">
-                        <span className="sr-only">Select row</span>
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
-                            style={{ colorScheme: 'light' }}
-                            checked={isAllOnPageSelected}
-                            ref={el => {
-                                if (el) {
-                                    el.indeterminate = isIndeterminate;
-                                }
-                            }}
-                            onChange={handleSelectAll}
-                            disabled={loading || paginatedRecords.length === 0}
-                        />
-                    </th>
-                    <SortableHeader columnKey="dateTime" title="Date & Time" />
-                    <SortableHeader columnKey="topic" title="Topic" />
-                    <SortableHeader columnKey="foremanName" title="Foreman" />
-                    <SortableHeader columnKey="location" title="Location" />
-                    <SortableHeader columnKey="crewSize" title="Crew Size" />
-                    <SortableHeader columnKey="syncStatus" title="Status" />
-                    <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-16">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue" />
-                          <h3 className="text-lg font-semibold text-gray-700">Loading Records...</h3>
-                          <p className="text-sm">Please wait while we fetch the latest data.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : paginatedRecords.length > 0 ? (
-                    paginatedRecords.map((record) => (
-                      <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50' : ''} hover:bg-gray-50 transition-colors duration-150 ease-in-out`}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
-                            style={{ colorScheme: 'light' }}
-                            checked={selectedRecordIds.has(record.id)}
-                            onChange={() => handleSelectRecord(record.id)}
-                            aria-label={`Select record ${record.id}`}
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateTime(record.dateTime)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.topic}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.foremanName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.location}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{record.crewSignatures.length}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {record.syncStatus === 'pending' ? (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                    Pending Sync
-                                </span>
-                            ) : (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                    Synced
-                                </span>
-                            )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end space-x-4">
-                            <Link to={`/talk-details/${record.id}`} className="text-brand-blue hover:text-brand-blue-dark hover:underline">
-                              View
-                            </Link>
-                            <button
-                              onClick={() => handleDownload(record.id)}
-                              className="text-gray-500 hover:text-brand-blue"
-                              aria-label={`Download PDF for ${record.topic} on ${formatDateTime(record.dateTime)}`}
-                            >
-                              <DownloadIcon className="h-5 w-5" />
-                            </button>
+          ) : (
+            <>
+              <PendingApprovals pendingCrew={pendingCrew} onApprove={handleApproveMember} onRejectClick={setMemberToReject} />
+              
+              {records.length === 0 && pendingCrew.length === 0 ? (
+                <OwnerEmptyState />
+              ) : (
+                <>
+                  {/* At-a-Glance Summary */}
+                  <div className="mb-6">
+                      <h2 className="text-lg font-semibold text-gray-800 mb-3">At-a-Glance Summary</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="lg:col-span-1">
+                              <MonthlyTalksChart data={dashboardStats.monthlyTalksData} />
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                     <tr>
-                        <td colSpan={8} className="text-center py-16">
-                            <div className="flex flex-col items-center justify-center text-gray-500">
-                                <SearchIcon className="w-12 h-12 mb-2 text-gray-400" />
-                                <h3 className="text-lg font-semibold text-gray-700">No Records Found</h3>
-                                <p className="text-sm">Try adjusting your filters to find what you're looking for.</p>
-                            </div>
-                        </td>
-                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(totalItems / itemsPerPage)}
-                onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={setItemsPerPage}
-                totalItems={totalItems}
-            />
-          </div>
+                          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <TopTopicsChart data={dashboardStats.topTopics} />
+                              <div className="grid grid-rows-2 gap-4">
+                                  <StatCard 
+                                      icon={<PencilSquareIcon className="h-6 w-6" />}
+                                      title="Total Signatures"
+                                      value={dashboardStats.signaturesThisMonth}
+                                      description="This Month"
+                                  />
+                                  <ListStatCard 
+                                      icon={<UserGroupIcon className="h-6 w-6" />}
+                                      title="Top 3 Foremen"
+                                      items={dashboardStats.topForemen}
+                                      description="By Talks Conducted"
+                                  />
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Filter and Table Section */}
+                  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                    <div className="pb-5">
+                      <h2 className="text-lg font-semibold text-gray-800">Toolbox Talk Records</h2>
+                      <p className="mt-1 text-sm text-gray-600">Review, filter, and download submitted safety talk reports.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 gap-2">
+                          <div>
+                              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start</label>
+                              <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
+                          </div>
+                          <div>
+                              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End</label>
+                              <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
+                          </div>
+                        </div>
+                      <div>
+                          <label htmlFor="Topic-multiselect" className="block text-sm font-medium text-gray-700">Topic</label>
+                          <MultiSelectDropdown
+                            label="Topic"
+                            options={uniqueTopics}
+                            selectedValues={filters.topic}
+                            onChange={(values) => handleMultiSelectChange('topic', values)}
+                            disabled={loading}
+                            placeholder="All Topics"
+                          />
+                      </div>
+                      <div>
+                          <label htmlFor="Foreman-multiselect" className="block text-sm font-medium text-gray-700">Foreman</label>
+                          <MultiSelectDropdown
+                            label="Foreman"
+                            options={uniqueForemen}
+                            selectedValues={filters.foreman}
+                            onChange={(values) => handleMultiSelectChange('foreman', values)}
+                            disabled={loading}
+                            placeholder="All Foremen"
+                          />
+                      </div>
+                      <div>
+                          <label htmlFor="Location-multiselect" className="block text-sm font-medium text-gray-700">Location</label>
+                          <MultiSelectDropdown
+                            label="Location"
+                            options={uniqueLocations}
+                            selectedValues={filters.location}
+                            onChange={(values) => handleMultiSelectChange('location', values)}
+                            disabled={loading}
+                            placeholder="All Locations"
+                          />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label htmlFor="minCrew" className="block text-sm font-medium text-gray-700">Min Crew</label>
+                            <select
+                              name="minCrew"
+                              id="minCrew"
+                              value={filters.minCrew}
+                              onChange={handleFilterChange}
+                              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
+                              style={{ colorScheme: 'light' }}
+                              disabled={loading}
+                            >
+                              <option value="">Any</option>
+                              {uniqueCrewSizes.map(size => (
+                                <option key={size} value={size}>{size}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label htmlFor="maxCrew" className="block text-sm font-medium text-gray-700">Max Crew</label>
+                            <select
+                              name="maxCrew"
+                              id="maxCrew"
+                              value={filters.maxCrew}
+                              onChange={handleFilterChange}
+                              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
+                              style={{ colorScheme: 'light' }}
+                              disabled={loading}
+                            >
+                              <option value="">Any</option>
+                              {uniqueCrewSizes.map(size => (
+                                <option key={size} value={size}>{size}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="sm:col-span-2 lg:col-span-5 flex items-end justify-end space-x-2 pt-4 lg:pt-0">
+                            <button 
+                                onClick={handleBulkDownload}
+                                disabled={selectedRecordIds.size === 0 || loading}
+                                className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                              <DownloadIcon className="h-4 w-4" />
+                              <span>Download Selected ({selectedRecordIds.size})</span>
+                            </button>
+                            <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
+                              <ResetIcon className="h-4 w-4" />
+                              <span>Reset Filters</span>
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div className="shadow border-b border-gray-200 sm:rounded-lg bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th scope="col" className="px-6 py-3">
+                                <span className="sr-only">Select row</span>
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
+                                    style={{ colorScheme: 'light' }}
+                                    checked={isAllOnPageSelected}
+                                    ref={el => {
+                                        if (el) {
+                                            el.indeterminate = isIndeterminate;
+                                        }
+                                    }}
+                                    onChange={handleSelectAll}
+                                    disabled={loading || paginatedRecords.length === 0}
+                                />
+                            </th>
+                            <SortableHeader columnKey="dateTime" title="Date & Time" />
+                            <SortableHeader columnKey="topic" title="Topic" />
+                            <SortableHeader columnKey="foremanName" title="Foreman" />
+                            <SortableHeader columnKey="location" title="Location" />
+                            <SortableHeader columnKey="crewSize" title="Crew Size" />
+                            <SortableHeader columnKey="recordStatus" title="Status" />
+                            <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {paginatedRecords.length > 0 ? (
+                            paginatedRecords.map((record) => (
+                              <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50' : ''} ${record.recordStatus === 'flagged' ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'} transition-colors duration-150 ease-in-out`}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
+                                    style={{ colorScheme: 'light' }}
+                                    checked={selectedRecordIds.has(record.id)}
+                                    onChange={() => handleSelectRecord(record.id)}
+                                    aria-label={`Select record ${record.id}`}
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateTime(record.dateTime)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.topic}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.foremanName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.location}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{record.crewSignatures.length}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    {record.recordStatus === 'flagged' ? (
+                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            Correction Needed
+                                        </span>
+                                    ) : record.syncStatus === 'pending' ? (
+                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Pending Sync
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Submitted
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <div className="flex items-center justify-end space-x-4">
+                                    <Link to={`/talk-details/${record.id}`} className="text-brand-blue hover:text-brand-blue-dark hover:underline">
+                                      View
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDownload(record.id)}
+                                      className="text-gray-500 hover:text-brand-blue"
+                                      aria-label={`Download PDF for ${record.topic} on ${formatDateTime(record.dateTime)}`}
+                                    >
+                                      <DownloadIcon className="h-5 w-5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                                <td colSpan={8} className="text-center py-16">
+                                    <div className="flex flex-col items-center justify-center text-gray-500">
+                                        <SearchIcon className="w-12 h-12 mb-2 text-gray-400" />
+                                        <h3 className="text-lg font-semibold text-gray-700">No Records Found</h3>
+                                        <p className="text-sm">Try adjusting your filters to find what you're looking for.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={Math.ceil(totalItems / itemsPerPage)}
+                        onPageChange={setCurrentPage}
+                        itemsPerPage={itemsPerPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                        totalItems={totalItems}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
       </main>
       <FeedbackModal
         isOpen={isFeedbackModalOpen}
@@ -680,6 +755,15 @@ const DashboardPage: React.FC = () => {
         onSubmit={handleFeedbackSubmit}
         userEmail={user?.email}
       />
+       <ConfirmationModal
+            isOpen={!!memberToReject}
+            onClose={() => setMemberToReject(null)}
+            onConfirm={handleConfirmReject}
+            title="Reject Crew Member"
+            confirmText="Reject"
+        >
+            Are you sure you want to reject <span className="font-bold">{memberToReject?.name}</span>? This action cannot be undone.
+        </ConfirmationModal>
     </div>
   );
 };

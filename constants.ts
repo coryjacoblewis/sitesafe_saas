@@ -1,6 +1,11 @@
-
-
 import { TalkRecord } from './types';
+
+const createHistory = (dateTime: string, foremanName: string) => [{
+    timestamp: dateTime,
+    action: 'CREATED' as const,
+    details: 'Talk record submitted by foreman.',
+    actor: foremanName,
+}];
 
 export const MOCK_TALK_RECORDS: TalkRecord[] = [
   {
@@ -17,6 +22,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Mike Ross', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-08T07:05:12Z', 'Frank Miller'),
   },
   {
     id: 'talk-002',
@@ -31,6 +38,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Emily White', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-07T07:10:30Z', 'Sarah Chen'),
   },
   {
     id: 'talk-003',
@@ -47,6 +56,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Lisa Ray', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-06T07:02:45Z', 'Frank Miller'),
   },
   {
     id: 'talk-004',
@@ -62,6 +73,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Tom Wilson', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-05T07:15:00Z', 'David Kim'),
   },
     {
     id: 'talk-005',
@@ -77,6 +90,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Steve Holt', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-04T07:08:22Z', 'Sarah Chen'),
   },
   {
     id: 'talk-006',
@@ -92,6 +107,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Mike Ross', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-03T07:01:50Z', 'Frank Miller'),
   },
   {
     id: 'talk-007',
@@ -106,6 +123,8 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Anna Garcia', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-02T07:11:11Z', 'David Kim'),
   },
   {
     id: 'talk-008',
@@ -121,5 +140,7 @@ export const MOCK_TALK_RECORDS: TalkRecord[] = [
       { name: 'Steve Holt', signature: null },
     ],
     syncStatus: 'synced',
+    recordStatus: 'submitted',
+    history: createHistory('2025-10-01T07:03:18Z', 'Sarah Chen'),
   },
 ];

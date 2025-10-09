@@ -2,9 +2,12 @@ import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTalkRecords } from '../../hooks/useTalkRecords';
+import { useToast } from '../../hooks/useToast';
 import { CrewSignature, SafetyTopic } from '../../types';
 import ForemanHeader from '../../components/foreman/ForemanHeader';
 import ClipboardListIcon from '../../components/icons/ClipboardListIcon';
+
+const DRAFT_KEY = 'siteSafeDraftTalk';
 
 const ReviewSubmitPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +24,7 @@ const ReviewSubmitPage: React.FC = () => {
 
   const { logout } = useAuth();
   const { addRecord } = useTalkRecords();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!topics || !location || !crew || !foremanName || !dateTime) {
@@ -42,7 +46,8 @@ const ReviewSubmitPage: React.FC = () => {
       });
     });
 
-    alert(`Talk saved successfully! It will be submitted automatically when you're back online.`);
+    localStorage.removeItem(DRAFT_KEY);
+    showToast('Talk saved! It will sync when you are online.', { type: 'success' });
     navigate('/foreman/dashboard');
   };
   

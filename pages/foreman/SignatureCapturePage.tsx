@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCrewMembers } from '../../hooks/useCrewMembers';
 import { useSafetyTopics } from '../../hooks/useSafetyTopics';
 import { useLocations } from '../../hooks/useLocations';
+import { useToast } from '../../hooks/useToast';
 import { CrewSignature } from '../../types';
 import ForemanHeader from '../../components/foreman/ForemanHeader';
 import SignaturePad from '../../components/SignaturePad';
@@ -17,10 +18,12 @@ import DocumentTextIcon from '../../components/icons/DocumentTextIcon';
 import UserPlusIcon from '../../components/icons/UserPlusIcon';
 import MultiSelectDropdown from '../../components/MultiSelectDropdown';
 
+const DRAFT_KEY = 'siteSafeDraftTalk';
+
 const SignatureCapturePage: React.FC = () => {
   const navigate = useNavigate();
   const locationRouter = useLocation();
-  const topics = (locationRouter.state?.topics as string[]) || [];
+  const { showToast } = useToast();
   
   const { user, logout } = useAuth();
   const { crewMembers } = useCrewMembers();
@@ -28,9 +31,30 @@ const SignatureCapturePage: React.FC = () => {
   const { locations } = useLocations();
 
   const activeLocations = useMemo(() => locations.filter(l => l.status === 'active'), [locations]);
+
+  // Load initial state from either a resumed draft or the topic selection page
+  const { topics: topicsFromSelection, resumeDraft } = (locationRouter.state || {}) as { topics?: string[], resumeDraft?: boolean };
+
+  const getInitialDraft = () => {
+    if (resumeDraft) {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+            try {
+                return JSON.parse(savedDraft);
+            } catch (e) {
+                console.error("Failed to parse draft, clearing.", e);
+                localStorage.removeItem(DRAFT_KEY);
+            }
+        }
+    }
+    return null;
+  }
+
+  const initialDraft = getInitialDraft();
+  const topics = useMemo(() => initialDraft?.topics || topicsFromSelection || [], [initialDraft, topicsFromSelection]);
   
-  const [location, setLocation] = useState(activeLocations.length > 0 ? activeLocations[0].name : '');
-  const [crew, setCrew] = useState<CrewSignature[]>([]);
+  const [location, setLocation] = useState(initialDraft?.location || (activeLocations.length > 0 ? activeLocations[0].name : ''));
+  const [crew, setCrew] = useState<CrewSignature[]>(initialDraft?.crew || []);
   const [crewMembersToAdd, setCrewMembersToAdd] = useState<string[]>([]);
   const [signingCrewMember, setSigningCrewMember] = useState<CrewSignature | null>(null);
   const [crewMemberToClear, setCrewMemberToClear] = useState<CrewSignature | null>(null);
@@ -43,10 +67,19 @@ const SignatureCapturePage: React.FC = () => {
 
   useEffect(() => {
     if (!topics || topics.length === 0) {
-      console.warn("No topics found in location state, redirecting.");
+      console.warn("No topics found in location state or draft, redirecting.");
       navigate('/foreman/select-talk');
     }
   }, [topics, navigate]);
+
+  useEffect(() => {
+    // Save draft to local storage on any change
+    if (topics && topics.length > 0) {
+        const draft = { topics, location, crew };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }, [topics, location, crew]);
+
 
   useEffect(() => {
     // If locations load after component mounts and location isn't set, set a default
@@ -79,7 +112,7 @@ const SignatureCapturePage: React.FC = () => {
       // Check if name already exists in master or current list
       const isDuplicate = crewMembers.some(cm => cm.name.toLowerCase() === trimmedName.toLowerCase()) || crew.some(c => c.name.toLowerCase() === trimmedName.toLowerCase());
       if (isDuplicate) {
-        alert(`A crew member named "${trimmedName}" already exists. Please use the selection dropdown or choose a different name.`);
+        showToast(`A crew member named "${trimmedName}" already exists.`, { type: 'error' });
         return;
       }
       
@@ -113,17 +146,17 @@ const SignatureCapturePage: React.FC = () => {
 
   const handleContinueToReview = () => {
     if (!location) {
-        alert("Please select a location.");
+        showToast("Please select a location.", { type: 'error' });
         return;
     }
      if (crew.length === 0) {
-        alert("Please add at least one crew member.");
+        showToast("Please add at least one crew member.", { type: 'error' });
         return;
     }
 
     const fullTopics = topics.map(name => safetyTopics.find(t => t.name === name)).filter(Boolean);
     if (fullTopics.length !== topics.length) {
-        alert("Some topic data could not be found. Please go back and re-select topics.");
+        showToast("Topic data missing. Please go back and re-select.", { type: 'error' });
         return;
     }
 

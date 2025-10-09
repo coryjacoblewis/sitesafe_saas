@@ -6,15 +6,26 @@ import ForemanHeader from '../../components/foreman/ForemanHeader';
 import PlusIcon from '../../components/icons/PlusIcon';
 import Pagination from '../../components/Pagination';
 import SpinnerIcon from '../../components/icons/SpinnerIcon';
-import SearchIcon from '../../components/icons/SearchIcon';
+import ClipboardListIcon from '../../components/icons/ClipboardListIcon';
+import ExclamationTriangleIcon from '../../components/icons/ExclamationTriangleIcon';
+import UserGroupIcon from '../../components/icons/UserGroupIcon';
+import { CrewSignature } from '../../types';
 
 type SortDirection = 'ascending' | 'descending';
-type SortableKey = 'dateTime' | 'topic' | 'location' | 'crewSize' | 'syncStatus';
+type SortableKey = 'dateTime' | 'topic' | 'location' | 'crewSize' | 'syncStatus' | 'recordStatus';
 
 interface SortConfig {
   key: SortableKey;
   direction: SortDirection;
 }
+
+interface TalkDraft {
+  topics: string[];
+  location: string;
+  crew: CrewSignature[];
+}
+
+const DRAFT_KEY = 'siteSafeDraftTalk';
 
 
 const ForemanDashboardPage: React.FC = () => {
@@ -25,6 +36,46 @@ const ForemanDashboardPage: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'dateTime', direction: 'descending' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [draft, setDraft] = useState<TalkDraft | null>(null);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        setDraft(JSON.parse(savedDraft));
+      } catch (e) {
+        console.error("Failed to parse draft talk", e);
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }
+  }, []);
+
+  const handleResumeDraft = () => {
+    navigate('/foreman/capture-signatures', { state: { resumeDraft: true } });
+  };
+
+  const handleDiscardDraft = () => {
+    setConfirmingDiscard(true);
+  };
+
+  const executeDiscard = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setDraft(null);
+    setConfirmingDiscard(false);
+  };
+
+  const handleStartNewTalk = () => {
+    if (draft) {
+      if (window.confirm("You have an in-progress talk. Starting a new one will discard your progress. Continue?")) {
+        localStorage.removeItem(DRAFT_KEY);
+        setDraft(null);
+        navigate('/foreman/select-talk');
+      }
+    } else {
+      navigate('/foreman/select-talk');
+    }
+  };
   
   const foremanTalks = useMemo(() => {
     if (!user) return [];
@@ -42,6 +93,8 @@ const ForemanDashboardPage: React.FC = () => {
     return records.filter(record => record.foremanName === user.email);
 
   }, [records, user]);
+
+  const flaggedTalksCount = useMemo(() => foremanTalks.filter(t => t.recordStatus === 'flagged').length, [foremanTalks]);
   
   const requestSort = (key: SortableKey) => {
     let direction: SortDirection = 'ascending';
@@ -53,8 +106,19 @@ const ForemanDashboardPage: React.FC = () => {
 
   const sortedRecords = useMemo(() => {
     const sortableRecords = [...foremanTalks];
+    // Always show flagged talks at the top
+    sortableRecords.sort((a, b) => {
+      if (a.recordStatus === 'flagged' && b.recordStatus !== 'flagged') return -1;
+      if (a.recordStatus !== 'flagged' && b.recordStatus === 'flagged') return 1;
+      return 0;
+    });
+
     if (sortConfig) {
       sortableRecords.sort((a, b) => {
+        // Keep flagged talks at the top regardless of other sorting
+        if (a.recordStatus === 'flagged' && b.recordStatus !== 'flagged') return -1;
+        if (a.recordStatus !== 'flagged' && b.recordStatus === 'flagged') return 1;
+
         let aValue: string | number;
         let bValue: string | number;
 
@@ -71,6 +135,10 @@ const ForemanDashboardPage: React.FC = () => {
             aValue = a.syncStatus || 'synced';
             bValue = b.syncStatus || 'synced';
             break;
+          case 'recordStatus':
+             aValue = a.recordStatus;
+             bValue = b.recordStatus;
+             break;
           default:
             aValue = a[sortConfig.key];
             bValue = b[sortConfig.key];
@@ -135,16 +203,91 @@ const ForemanDashboardPage: React.FC = () => {
                     </h1>
                     <p className="mt-1 text-gray-600">Ready to start your next safety talk?</p>
                 </div>
-                <div className="mt-4 sm:mt-0">
+                <div className="mt-4 sm:mt-0 flex items-center space-x-3">
                     <button
-                        onClick={() => navigate('/foreman/select-talk')}
-                        className="w-full sm:w-auto flex items-center justify-center space-x-3 text-lg font-semibold text-white bg-brand-blue hover:bg-brand-blue-dark rounded-lg shadow-md px-6 py-3 transition-transform transform hover:scale-105"
+                        onClick={() => navigate('/foreman/my-crew')}
+                        className="flex items-center justify-center space-x-2 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg shadow-sm px-4 py-3 transition-colors"
+                    >
+                        <UserGroupIcon className="h-5 w-5" />
+                        <span>View Crew Roster</span>
+                    </button>
+                    <button
+                        onClick={handleStartNewTalk}
+                        className="flex items-center justify-center space-x-3 text-lg font-semibold text-white bg-brand-blue hover:bg-brand-blue-dark rounded-lg shadow-md px-6 py-3 transition-transform transform hover:scale-105"
                     >
                         <PlusIcon className="h-6 w-6" />
                         <span>Start New Talk</span>
                     </button>
                 </div>
             </div>
+
+            {flaggedTalksCount > 0 && (
+                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg shadow">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm font-bold text-yellow-800">Action Required</p>
+                            <p className="mt-1 text-sm text-yellow-700">
+                                You have {flaggedTalksCount} talk record(s) that require correction. Please review them in the table below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {draft && (
+                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-lg shadow">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <ExclamationTriangleIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                        </div>
+                        <div className="ml-3">
+                            {confirmingDiscard ? (
+                                <>
+                                    <p className="text-sm font-bold text-blue-800">Are you sure?</p>
+                                    <p className="mt-1 text-sm text-blue-700">This will permanently delete your in-progress talk.</p>
+                                    <div className="mt-3 flex space-x-3">
+                                        <button
+                                            onClick={executeDiscard}
+                                            className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md shadow-sm hover:bg-red-700"
+                                        >
+                                            Yes, Discard
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmingDiscard(false)}
+                                            className="px-3 py-1.5 text-sm font-medium text-blue-800 bg-blue-100 rounded-md hover:bg-blue-200"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-bold text-blue-800">In-Progress Talk Found</p>
+                                    <p className="mt-1 text-sm text-blue-700">You have an unsaved toolbox talk. Would you like to continue where you left off?</p>
+                                    <div className="mt-3 flex space-x-3">
+                                        <button
+                                            onClick={handleResumeDraft}
+                                            className="px-3 py-1.5 text-sm font-medium text-white bg-brand-blue rounded-md shadow-sm hover:bg-brand-blue-dark"
+                                        >
+                                            Resume
+                                        </button>
+                                        <button
+                                            onClick={handleDiscardDraft}
+                                            className="px-3 py-1.5 text-sm font-medium text-blue-800 bg-blue-100 rounded-md hover:bg-blue-200"
+                                        >
+                                            Discard
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             <div className="mt-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">My Talks</h2>
@@ -157,7 +300,7 @@ const ForemanDashboardPage: React.FC = () => {
                             <SortableHeader columnKey="topic" title="Topic" />
                             <SortableHeader columnKey="location" title="Location" />
                             <SortableHeader columnKey="crewSize" title="Crew Size" />
-                            <SortableHeader columnKey="syncStatus" title="Status" />
+                            <SortableHeader columnKey="recordStatus" title="Status" />
                             <th scope="col" className="relative px-6 py-3">
                                 <span className="sr-only">View Details</span>
                             </th>
@@ -175,19 +318,23 @@ const ForemanDashboardPage: React.FC = () => {
                             </tr>
                         ) : paginatedRecords.length > 0 ? (
                             paginatedRecords.map((talk) => (
-                            <tr key={talk.id} onClick={() => navigate(`/foreman/talk-details/${talk.id}`)} className="hover:bg-gray-50 transition-colors duration-150 ease-in-out cursor-pointer">
+                            <tr key={talk.id} onClick={() => navigate(`/foreman/talk-details/${talk.id}`)} className={`${talk.recordStatus === 'flagged' ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'} transition-colors duration-150 ease-in-out cursor-pointer`}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateTime(talk.dateTime)}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{talk.topic}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{talk.location}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{talk.crewSignatures.length}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {talk.syncStatus === 'pending' ? (
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {talk.recordStatus === 'flagged' ? (
+                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            Correction Needed
+                                        </span>
+                                    ) : talk.syncStatus === 'pending' ? (
+                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                             Pending Sync
                                         </span>
                                     ) : (
                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Synced
+                                            Submitted
                                         </span>
                                     )}
                                 </td>
@@ -198,11 +345,14 @@ const ForemanDashboardPage: React.FC = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={6} className="text-center py-16">
+                                <td colSpan={6} className="text-center py-16 px-4">
                                     <div className="flex flex-col items-center justify-center text-gray-500">
-                                        <SearchIcon className="w-12 h-12 mb-2 text-gray-400" />
-                                        <h3 className="text-lg font-semibold text-gray-700">No Talks Found</h3>
-                                        <p className="text-sm">Your completed talks will appear here.</p>
+                                        <ClipboardListIcon className="w-12 h-12 mb-4 text-gray-400" />
+                                        <h3 className="text-lg font-semibold text-gray-700">No Talks Conducted Yet</h3>
+                                        <p className="text-sm mt-1">Your completed talks will appear here.</p>
+                                        <p className="text-sm text-gray-500 mt-2">
+                                          Tap the <span className="font-bold text-brand-blue">'Start New Talk'</span> button to begin.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>

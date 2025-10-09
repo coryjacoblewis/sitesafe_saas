@@ -2,8 +2,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useCrewMembers } from '../../hooks/useCrewMembers';
+import { useToast } from '../../hooks/useToast';
 import Header from '../../components/Header';
 import Modal from '../../components/Modal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import { CrewMember, ChangeLog } from '../../types';
 import UserPlusIcon from '../../components/icons/UserPlusIcon';
 import PencilSquareIcon from '../../components/icons/PencilSquareIcon';
@@ -28,10 +30,13 @@ interface ParsedRow {
 const CrewManagementPage: React.FC = () => {
     const { user, logout } = useAuth();
     const { crewMembers, addCrewMember, updateCrewMember, toggleCrewMemberStatus, bulkAddOrUpdateCrew, loading } = useCrewMembers();
+    const { showToast } = useToast();
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [memberToDeactivate, setMemberToDeactivate] = useState<CrewMember | null>(null);
 
     const [editingMember, setEditingMember] = useState<CrewMember | null>(null);
     const [viewingHistoryFor, setViewingHistoryFor] = useState<CrewMember | null>(null);
@@ -43,7 +48,6 @@ const CrewManagementPage: React.FC = () => {
     const [importFileName, setImportFileName] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // FIX: Moved `sortedAndFilteredMembers` before `handleExportCSV` to resolve the "used before declaration" error.
     const sortedAndFilteredMembers = useMemo(() => {
         return [...crewMembers]
             .filter(member => member.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -64,6 +68,7 @@ const CrewManagementPage: React.FC = () => {
     const handleAddMember = (e: React.FormEvent) => {
         e.preventDefault();
         addCrewMember(newMemberName);
+        showToast(`Crew member "${newMemberName}" added successfully.`, { type: 'success' });
         setNewMemberName('');
         setIsAddModalOpen(false);
     };
@@ -72,15 +77,33 @@ const CrewManagementPage: React.FC = () => {
         e.preventDefault();
         if (editingMember) {
             updateCrewMember(editingMember.id, newMemberName);
+            showToast(`Crew member updated to "${newMemberName}".`, { type: 'success' });
         }
         setNewMemberName('');
         setEditingMember(null);
         setIsEditModalOpen(false);
     };
+
+    const handleToggleStatus = (member: CrewMember) => {
+        if (member.status === 'active') {
+            setMemberToDeactivate(member);
+        } else {
+            toggleCrewMemberStatus(member.id);
+            showToast(`${member.name} has been activated.`, { type: 'success' });
+        }
+    };
+    
+    const confirmDeactivation = () => {
+        if (memberToDeactivate) {
+            toggleCrewMemberStatus(memberToDeactivate.id);
+            showToast(`${memberToDeactivate.name} has been deactivated.`, { type: 'info' });
+            setMemberToDeactivate(null);
+        }
+    };
     
     const handleExportCSV = useCallback(() => {
         if (sortedAndFilteredMembers.length === 0) {
-            alert("No data to export.");
+            showToast("No data to export.", { type: 'error' });
             return;
         }
         const header = "name,status\n";
@@ -97,8 +120,9 @@ const CrewManagementPage: React.FC = () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            showToast("Crew data export started.", { type: 'success' });
         }
-    }, [sortedAndFilteredMembers]);
+    }, [sortedAndFilteredMembers, showToast]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -116,7 +140,7 @@ const CrewManagementPage: React.FC = () => {
     const processCSV = (csvText: string) => {
         const rows = csvText.split(/\r?\n/).filter(Boolean);
         if (rows.length <= 1) {
-            alert("CSV file is empty or contains only a header.");
+            showToast("CSV file is empty or contains only a header.", { type: 'error' });
             return;
         }
 
@@ -125,7 +149,7 @@ const CrewManagementPage: React.FC = () => {
         const statusIndex = header.indexOf('status');
         
         if (nameIndex === -1 || statusIndex === -1) {
-            alert('CSV must contain "name" and "status" columns.');
+            showToast('CSV must contain "name" and "status" columns.', { type: 'error' });
             return;
         }
 
@@ -162,17 +186,17 @@ const CrewManagementPage: React.FC = () => {
     const handleConfirmImport = async () => {
         const validData = parsedCsvData.filter(row => row.status !== 'error').map(row => row.data);
         if (validData.length === 0) {
-            alert("No valid data to import.");
+            showToast("No valid data to import.", { type: 'error' });
             return;
         }
         setIsProcessing(true);
         try {
             const { added, updated } = await bulkAddOrUpdateCrew(validData);
-            alert(`Import successful!\nAdded: ${added}\nUpdated: ${updated}`);
+            showToast(`Import successful! Added: ${added}, Updated: ${updated}`, { type: 'success' });
             closeImportModal();
         } catch (error) {
             console.error("Import failed:", error);
-            alert("An error occurred during the import process. Please check the console for details.");
+            showToast("An error occurred during the import process.", { type: 'error' });
         } finally {
             setIsProcessing(false);
         }
@@ -432,7 +456,7 @@ const CrewManagementPage: React.FC = () => {
                                                 <button onClick={() => openEditModal(member)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="Edit Name">
                                                     <PencilSquareIcon className="h-4 w-4" />
                                                 </button>
-                                                <button onClick={() => toggleCrewMemberStatus(member.id)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
+                                                <button onClick={() => handleToggleStatus(member)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
                                                     {member.status === 'active' ? 'Deactivate' : 'Activate'}
                                                 </button>
                                             </td>
@@ -460,6 +484,16 @@ const CrewManagementPage: React.FC = () => {
             <Modal isOpen={isImportModalOpen} onClose={closeImportModal} title="Import Crew from CSV">
                 {renderImportModal()}
             </Modal>
+
+             <ConfirmationModal
+                isOpen={!!memberToDeactivate}
+                onClose={() => setMemberToDeactivate(null)}
+                onConfirm={confirmDeactivation}
+                title="Deactivate Crew Member"
+                confirmText="Deactivate"
+            >
+                Are you sure you want to deactivate <span className="font-bold">{memberToDeactivate?.name}</span>? They will not be available for selection in new talks.
+            </ConfirmationModal>
         </div>
     );
 };

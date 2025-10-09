@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useLocations } from '../../hooks/useLocations';
+import { useToast } from '../../hooks/useToast';
 import Header from '../../components/Header';
 import Modal from '../../components/Modal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import { Location, ChangeLog } from '../../types';
 import SpinnerIcon from '../../components/icons/SpinnerIcon';
 import SearchIcon from '../../components/icons/SearchIcon';
@@ -19,9 +21,13 @@ import MapPinIcon from '../../components/icons/MapPinIcon';
 const LocationManagementPage: React.FC = () => {
     const { user, logout } = useAuth();
     const { locations, addLocation, updateLocation, toggleLocationStatus, loading } = useLocations();
+    const { showToast } = useToast();
+    
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [locationToDeactivate, setLocationToDeactivate] = useState<Location | null>(null);
+
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
     const [viewingHistoryFor, setViewingHistoryFor] = useState<Location | null>(null);
     const [locationName, setLocationName] = useState('');
@@ -41,6 +47,7 @@ const LocationManagementPage: React.FC = () => {
     const handleAddLocation = (e: React.FormEvent) => {
         e.preventDefault();
         addLocation(locationName);
+        showToast(`Location "${locationName}" added successfully.`, { type: 'success' });
         setLocationName('');
         setIsAddModalOpen(false);
     };
@@ -49,10 +56,28 @@ const LocationManagementPage: React.FC = () => {
         e.preventDefault();
         if (editingLocation) {
             updateLocation(editingLocation.id, locationName);
+            showToast(`Location updated to "${locationName}".`, { type: 'success' });
         }
         setLocationName('');
         setEditingLocation(null);
         setIsEditModalOpen(false);
+    };
+    
+    const handleToggleStatus = (location: Location) => {
+        if (location.status === 'active') {
+            setLocationToDeactivate(location);
+        } else {
+            toggleLocationStatus(location.id);
+            showToast(`"${location.name}" has been activated.`, { type: 'success' });
+        }
+    };
+    
+    const confirmDeactivation = () => {
+        if (locationToDeactivate) {
+            toggleLocationStatus(locationToDeactivate.id);
+            showToast(`"${locationToDeactivate.name}" has been deactivated.`, { type: 'info' });
+            setLocationToDeactivate(null);
+        }
     };
 
     const formatDateTime = (isoString: string) => {
@@ -217,7 +242,7 @@ const LocationManagementPage: React.FC = () => {
                                                 <button onClick={() => openEditModal(location)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="Edit Name">
                                                     <PencilSquareIcon className="h-4 w-4" />
                                                 </button>
-                                                <button onClick={() => toggleLocationStatus(location.id)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
+                                                <button onClick={() => handleToggleStatus(location)} className="text-gray-600 hover:text-gray-900 text-xs px-2 py-1 rounded hover:bg-gray-100">
                                                     {location.status === 'active' ? 'Deactivate' : 'Activate'}
                                                 </button>
                                             </td>
@@ -241,6 +266,16 @@ const LocationManagementPage: React.FC = () => {
             <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Change History for ${viewingHistoryFor?.name}`}>
                 {renderHistoryModal()}
             </Modal>
+
+            <ConfirmationModal
+                isOpen={!!locationToDeactivate}
+                onClose={() => setLocationToDeactivate(null)}
+                onConfirm={confirmDeactivation}
+                title="Deactivate Location"
+                confirmText="Deactivate"
+            >
+                Are you sure you want to deactivate the location "<span className="font-bold">{locationToDeactivate?.name}</span>"? It will no longer be available for selection in new talks.
+            </ConfirmationModal>
         </div>
     );
 };

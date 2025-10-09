@@ -19,6 +19,14 @@ export interface TalkRecord {
   foremanName: string;
   crewSignatures: CrewSignature[];
   syncStatus: 'synced' | 'pending';
+  recordStatus: 'submitted' | 'flagged' | 'amended';
+  history: ChangeLog[];
+  flag?: {
+    flaggedBy: string; // manager's email
+    flaggedAt: string; // ISO date string
+    reason: string;
+  };
+  originalTalkId?: string; // If this is an amendment, this points to the original
 }
 
 export type FeedbackCategory = 'bug' | 'idea' | 'question' | 'design' | 'general';
@@ -35,9 +43,22 @@ export interface FeedbackSubmission {
   };
 }
 
+export type ChangeLogAction =
+  | 'CREATED'
+  | 'UPDATED_NAME'
+  | 'ACTIVATED'
+  | 'DEACTIVATED'
+  | 'UPDATED_CONTENT'
+  | 'UPDATED_PDF'
+  | 'UPDATED_DETAILS'
+  | 'FLAGGED'
+  | 'FLAG_RESOLVED'
+  | 'AMENDED';
+
+
 export interface ChangeLog {
   timestamp: string;
-  action: 'CREATED' | 'UPDATED_NAME' | 'ACTIVATED' | 'DEACTIVATED' | 'UPDATED_CONTENT' | 'UPDATED_PDF' | 'UPDATED_DETAILS';
+  action: ChangeLogAction;
   details: string;
   actor?: string | null;
 }
