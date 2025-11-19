@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTalkRecords } from '../../hooks/useTalkRecords';
@@ -6,6 +6,9 @@ import { useToast } from '../../hooks/useToast';
 import { CrewSignature, SafetyTopic } from '../../types';
 import ForemanHeader from '../../components/foreman/ForemanHeader';
 import ClipboardListIcon from '../../components/icons/ClipboardListIcon';
+import SpinnerIcon from '../../components/icons/SpinnerIcon';
+import CameraIcon from '../../components/icons/CameraIcon';
+import TrashIcon from '../../components/icons/TrashIcon';
 
 const DRAFT_KEY = 'siteSafeDraftTalk';
 
@@ -25,6 +28,9 @@ const ReviewSubmitPage: React.FC = () => {
   const { logout } = useAuth();
   const { addRecord } = useTalkRecords();
   const { showToast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusText, setStatusText] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!topics || !location || !crew || !foremanName || !dateTime) {
@@ -33,22 +39,85 @@ const ReviewSubmitPage: React.FC = () => {
     }
   }, [topics, location, crew, foremanName, dateTime, navigate]);
 
-  const handleSubmitTalk = () => {
-    topics.forEach(topic => {
-      addRecord({
-        dateTime: dateTime,
-        location: location,
-        topic: topic.name,
-        topicId: topic.id,
-        topicPdfUrl: topic.pdfUrl,
-        foremanName: foremanName,
-        crewSignatures: crew,
-      });
+  const getPosition = () => {
+    return new Promise<GeolocationPosition>((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser'));
+      } else {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        });
+      }
     });
+  };
 
-    localStorage.removeItem(DRAFT_KEY);
-    showToast('Talk saved! It will sync when you are online.', { type: 'success' });
-    navigate('/foreman/dashboard');
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Photo is too large (max 5MB).', {type: 'error'});
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPhoto(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitTalk = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setStatusText('Verifying location...');
+
+    let gpsCoordinates = undefined;
+
+    try {
+        const position = await getPosition();
+        gpsCoordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp
+        };
+        showToast('Location verified.', { type: 'success' });
+    } catch (error) {
+        console.warn("GPS failed", error);
+        showToast('Could not verify location. Submitting without GPS.', { type: 'info' });
+        // Proceed without GPS coordinates - MVP "soft fail"
+    }
+
+    setStatusText('Submitting...');
+
+    try {
+      // Create an array of promises to ensure all records are saved before navigating
+      const submissionPromises = topics.map(topic =>
+        addRecord({
+          dateTime: dateTime,
+          location: location,
+          topic: topic.name,
+          topicId: topic.id,
+          topicPdfUrl: topic.pdfUrl,
+          foremanName: foremanName,
+          crewSignatures: crew,
+          gpsCoordinates: gpsCoordinates,
+          photoEvidence: photo || undefined,
+        })
+      );
+
+      await Promise.all(submissionPromises);
+
+      localStorage.removeItem(DRAFT_KEY);
+      showToast('Talk saved! It will sync when you are online.', { type: 'success' });
+      navigate('/foreman/dashboard');
+    } catch (error) {
+      console.error("Failed to submit talks:", error);
+      showToast('Failed to save talks. Please try again.', { type: 'error' });
+      setIsSubmitting(false);
+    }
   };
   
   const signedCrewCount = useMemo(() => crew?.filter(c => c.signature).length || 0, [crew]);
@@ -56,7 +125,7 @@ const ReviewSubmitPage: React.FC = () => {
   if (!topics || !location || !crew) {
     return (
         <div className="min-h-screen bg-brand-gray flex items-center justify-center">
-            {/* Can show a spinner here */}
+             <SpinnerIcon className="h-10 w-10 text-brand-blue" />
         </div>
     );
   }
@@ -92,6 +161,32 @@ const ReviewSubmitPage: React.FC = () => {
                         <div className="text-gray-800 text-right">{location}</div>
                     </div>
                 </div>
+            </div>
+            
+            <div className="mt-6 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Photo Evidence (Optional)</h2>
+                <p className="text-sm text-gray-500 mb-4">Take a photo of the crew or the hazard discussed to provide proof of attendance.</p>
+                
+                {photo ? (
+                    <div className="relative">
+                        <img src={photo} alt="Evidence" className="w-full rounded-lg border border-gray-300" />
+                        <button 
+                            onClick={() => setPhoto(null)} 
+                            className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md text-red-600 hover:bg-gray-100"
+                            aria-label="Remove photo"
+                        >
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <CameraIcon className="w-10 h-10 text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500 font-semibold">Tap to take a photo</p>
+                        </div>
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={handlePhotoCapture} />
+                    </label>
+                )}
             </div>
 
             <div className="mt-6">
@@ -129,10 +224,11 @@ const ReviewSubmitPage: React.FC = () => {
         <div className="max-w-md mx-auto">
           <button
             onClick={handleSubmitTalk}
-            disabled={signedCrewCount === 0}
-            className="w-full py-3 px-4 bg-brand-blue text-white font-bold rounded-lg shadow-sm hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={signedCrewCount === 0 || isSubmitting}
+            className="w-full py-3 px-4 bg-brand-blue text-white font-bold rounded-lg shadow-sm hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
-            {signedCrewCount > 0 ? 'Confirm & Submit Talk' : 'At least one signature is required'}
+             {isSubmitting && <SpinnerIcon className="h-5 w-5 text-white" />}
+             <span>{isSubmitting ? statusText : (signedCrewCount > 0 ? 'Confirm & Submit Talk' : 'At least one signature is required')}</span>
           </button>
         </div>
       </footer>

@@ -119,7 +119,7 @@ export const CrewMembersProvider: React.FC<{ children: React.ReactNode }> = ({ c
     let addedCount = 0;
     let updatedCount = 0;
 
-    const currentMembersMap = new Map(crewMembers.map(m => [m.name.toLowerCase(), m]));
+    const currentMembersMap = new Map<string, CrewMember>(crewMembers.map(m => [m.name.toLowerCase(), m]));
     const membersToUpsert: CrewMember[] = [];
     const updatedCrew = [...crewMembers];
 

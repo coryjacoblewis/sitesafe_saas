@@ -6,6 +6,7 @@ import ForemanHeader from '../../components/foreman/ForemanHeader';
 import ClipboardListIcon from '../../components/icons/ClipboardListIcon';
 import CheckIcon from '../../components/icons/CheckIcon';
 import InformationCircleIcon from '../../components/icons/InformationCircleIcon';
+import CameraIcon from '../../components/icons/CameraIcon';
 
 const TalkDetailsPage: React.FC = () => {
   const { talkId } = useParams<{ talkId: string }>();
@@ -79,6 +80,15 @@ const TalkDetailsPage: React.FC = () => {
                 <span className="text-gray-800">{talk.location}</span>
               </div>
             </div>
+            {talk.photoEvidence && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-500 flex items-center mb-2">
+                        <CameraIcon className="h-4 w-4 mr-1" />
+                        Photo Evidence
+                    </h3>
+                    <img src={talk.photoEvidence} alt="Site Photo" className="w-full rounded-md border border-gray-200" />
+                </div>
+            )}
           </div>
           
           <div className="mt-6">

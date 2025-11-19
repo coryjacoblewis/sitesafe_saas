@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -16,6 +17,7 @@ import ArrowUpIcon from '../../components/icons/ArrowUpIcon';
 import ArrowDownIcon from '../../components/icons/ArrowDownIcon';
 import PencilSquareIcon from '../../components/icons/PencilSquareIcon';
 import MapPinIcon from '../../components/icons/MapPinIcon';
+import { isNotEmpty, sanitizeString } from '../../utils/validation';
 
 
 const LocationManagementPage: React.FC = () => {
@@ -46,17 +48,27 @@ const LocationManagementPage: React.FC = () => {
 
     const handleAddLocation = (e: React.FormEvent) => {
         e.preventDefault();
-        addLocation(locationName);
-        showToast(`Location "${locationName}" added successfully.`, { type: 'success' });
+        if (!isNotEmpty(locationName)) {
+            showToast("Location name cannot be empty.", { type: 'error' });
+            return;
+        }
+        const sanitizedName = sanitizeString(locationName);
+        addLocation(sanitizedName);
+        showToast(`Location "${sanitizedName}" added successfully.`, { type: 'success' });
         setLocationName('');
         setIsAddModalOpen(false);
     };
     
     const handleUpdateLocation = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isNotEmpty(locationName)) {
+             showToast("Location name cannot be empty.", { type: 'error' });
+             return;
+        }
         if (editingLocation) {
-            updateLocation(editingLocation.id, locationName);
-            showToast(`Location updated to "${locationName}".`, { type: 'success' });
+            const sanitizedName = sanitizeString(locationName);
+            updateLocation(editingLocation.id, sanitizedName);
+            showToast(`Location updated to "${sanitizedName}".`, { type: 'success' });
         }
         setLocationName('');
         setEditingLocation(null);
@@ -99,7 +111,7 @@ const LocationManagementPage: React.FC = () => {
 
     const renderLocationForm = (handleSubmit: (e: React.FormEvent) => void) => (
         <form onSubmit={handleSubmit}>
-            <label htmlFor="locationName" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="locationName" className="block text-sm font-bold text-gray-900">
                 Location Name
             </label>
             <div className="mt-1">
@@ -151,7 +163,7 @@ const LocationManagementPage: React.FC = () => {
                           <HistoryActionIcon action={log.action} />
                           <div className="flex-1">
                               <p className="text-sm text-gray-800">{log.details}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">
+                              <p className="text-xs text-gray-600 mt-0.5">
                                  {log.actor && (
                                     <>
                                         by <span className="font-medium">{log.actor}</span> &bull;{' '}
@@ -213,11 +225,11 @@ const LocationManagementPage: React.FC = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Modified</th>
-                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Name</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Date Added</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Last Modified</th>
+                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -233,8 +245,8 @@ const LocationManagementPage: React.FC = () => {
                                                     {location.status === 'active' ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(location.dateAdded)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(location.lastModified)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(location.dateAdded)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(location.lastModified)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <button onClick={() => openHistoryModal(location)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="View History">
                                                     <ClockIcon className="h-4 w-4" />

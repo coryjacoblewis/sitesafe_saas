@@ -8,7 +8,7 @@ const TOPICS_STORE = 'safetyTopics';
 
 interface SafetyTopicsContextType {
   safetyTopics: SafetyTopic[];
-  addSafetyTopic: (name: string, content: string) => void;
+  addSafetyTopic: (name: string, content: string, pdfData?: { name: string; dataUrl: string; }) => void;
   updateSafetyTopic: (id: string, newName: string, newContent: string, pdfData?: { name: string; dataUrl: string; }) => void;
   toggleSafetyTopicStatus: (id: string) => void;
   loading: boolean;
@@ -44,7 +44,7 @@ export const SafetyTopicsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     loadData();
   }, []);
 
-  const addSafetyTopic = useCallback(async (name: string, content: string) => {
+  const addSafetyTopic = useCallback(async (name: string, content: string, pdfData?: { name: string; dataUrl: string; }) => {
     if (name.trim() === '') return;
     
     const now = new Date().toISOString();
@@ -52,7 +52,7 @@ export const SafetyTopicsProvider: React.FC<{ children: React.ReactNode }> = ({ 
       id: crypto.randomUUID(),
       name: name.trim(),
       content: content.trim(),
-      pdfUrl: '/mock-topic.pdf',
+      pdfUrl: pdfData ? pdfData.dataUrl : '/mock-topic.pdf',
       status: 'active',
       dateAdded: now,
       lastModified: now,
@@ -60,7 +60,7 @@ export const SafetyTopicsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         {
             timestamp: now,
             action: 'CREATED',
-            details: `Topic added with name "${name.trim()}".`,
+            details: `Topic added with name "${name.trim()}".${pdfData ? ' PDF uploaded.' : ''}`,
             actor: user?.email
         }
       ]

@@ -20,6 +20,13 @@ export interface TalkRecord {
   crewSignatures: CrewSignature[];
   syncStatus: 'synced' | 'pending';
   recordStatus: 'submitted' | 'flagged' | 'amended';
+  gpsCoordinates?: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    timestamp: number;
+  };
+  photoEvidence?: string; // Base64 Data URL of the captured photo
   history: ChangeLog[];
   flag?: {
     flaggedBy: string; // manager's email
