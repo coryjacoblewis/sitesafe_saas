@@ -257,7 +257,7 @@ const TopicManagementPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-brand-gray">
-            <Header userEmail={user?.email} onLogout={logout} onFeedbackClick={() => {}} />
+            <Header userEmail={user?.email} userRole={user?.role} onLogout={logout} onFeedbackClick={() => {}} />
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b border-gray-200 pb-5 mb-5">

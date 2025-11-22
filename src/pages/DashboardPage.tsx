@@ -461,6 +461,7 @@ const DashboardPage: React.FC = () => {
     <div className="min-h-screen bg-brand-gray">
       <Header
         userEmail={user?.email}
+        userRole={user?.role}
         onLogout={logout}
         onFeedbackClick={() => setIsFeedbackModalOpen(true)}
       />

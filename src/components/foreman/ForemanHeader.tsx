@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import LogoIcon from '../icons/LogoIcon';
 import ChevronLeftIcon from '../icons/ChevronLeftIcon';
 
@@ -32,9 +32,13 @@ const ForemanHeader: React.FC<ForemanHeaderProps> = ({ onLogout, showBackButton 
                 <span className="sr-only">Back</span>
               </button>
             ) : (
-              <LogoIcon className="h-8 w-8 text-brand-blue" />
+              <Link to="/foreman/dashboard" className="flex items-center space-x-2">
+                <LogoIcon className="h-8 w-8 text-brand-blue" />
+              </Link>
             )}
-            <span className="text-xl font-bold text-gray-800">SiteSafe</span>
+            <Link to="/foreman/dashboard" className="flex items-center space-x-2">
+              <span className="text-xl font-bold text-gray-800">SiteSafe</span>
+            </Link>
           </div>
           <div className="flex items-center">
             <button
