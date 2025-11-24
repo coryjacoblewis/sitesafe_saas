@@ -1,0 +1,23 @@
+
+> sitesafe-dashboard@0.0.0 build
+> vite build
+
+vite v6.3.6 building for production...
+transforming...
+✓ 102 modules transformed.
+✗ Build failed in 470ms
+error during build:
+[vite]: Rollup failed to resolve import "jspdf" from "/Users/corylewis/sitesafe_saas/src/utils/pdfGenerator.ts".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///Users/corylewis/sitesafe_saas/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:46363:15)
+    at file:///Users/corylewis/sitesafe_saas/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:46421:18
+    at onwarn (file:///Users/corylewis/sitesafe_saas/node_modules/@vitejs/plugin-react/dist/index.js:55:7)
+    at file:///Users/corylewis/sitesafe_saas/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:46419:7
+    at onRollupLog (file:///Users/corylewis/sitesafe_saas/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:46411:5)
+    at onLog (file:///Users/corylewis/sitesafe_saas/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:46061:7)
+    at file:///Users/corylewis/sitesafe_saas/node_modules/rollup/dist/es/shared/node-entry.js:20937:32
+    at Object.logger [as onLog] (file:///Users/corylewis/sitesafe_saas/node_modules/rollup/dist/es/shared/node-entry.js:22823:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/corylewis/sitesafe_saas/node_modules/rollup/dist/es/shared/node-entry.js:21567:26)
+    at file:///Users/corylewis/sitesafe_saas/node_modules/rollup/dist/es/shared/node-entry.js:21525:26
