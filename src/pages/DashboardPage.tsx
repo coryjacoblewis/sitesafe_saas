@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TalkRecord, FeedbackSubmission, PendingCrewMember } from '../types';
@@ -7,6 +8,8 @@ import { useSafetyTopics } from '../hooks/useSafetyTopics';
 import { useLocations } from '../hooks/useLocations';
 import { usePendingCrew } from '../hooks/usePendingCrew';
 import { useToast } from '../hooks/useToast';
+import { resetDb, getDbSnapshot, restoreDbSnapshot } from '../utils/db';
+import { generateTalkRecordPDF } from '../utils/pdfGenerator';
 import Header from '../components/Header';
 import DownloadIcon from '../components/icons/DownloadIcon';
 import SearchIcon from '../components/icons/SearchIcon';
@@ -19,6 +22,14 @@ import CheckIcon from '../components/icons/CheckIcon';
 import XIcon from '../components/icons/XIcon';
 import ClipboardListIcon from '../components/icons/ClipboardListIcon';
 import PencilSquareIcon from '../components/icons/PencilSquareIcon';
+import ArrowUpIcon from '../components/icons/ArrowUpIcon';
+import ArrowDownIcon from '../components/icons/ArrowDownIcon';
+import TrashIcon from '../components/icons/TrashIcon';
+import CloudCheckIcon from '../components/icons/CloudCheckIcon';
+import CloudArrowUpIcon from '../components/icons/CloudArrowUpIcon';
+import ExclamationTriangleIcon from '../components/icons/ExclamationTriangleIcon';
+import ArrowDownTrayIcon from '../components/icons/ArrowDownTrayIcon';
+import ArrowUpTrayIcon from '../components/icons/ArrowUpTrayIcon';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import Pagination from '../components/Pagination';
 import FeedbackModal from '../components/FeedbackModal';
@@ -36,37 +47,37 @@ interface SortConfig {
 }
 
 const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string | number; description: string }> = ({ icon, title, value, description }) => (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-start space-x-4">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
         <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
             {icon}
         </div>
         <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            <p className="text-xs text-gray-500">{description}</p>
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">{description}</p>
         </div>
     </div>
 );
 
 const ListStatCard: React.FC<{ icon: React.ReactNode; title: string; items: string[]; description: string; }> = ({ icon, title, items, description }) => (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-start space-x-4">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
         <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-500">{title}</p>
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
             {items.length > 0 ? (
-                <ol className="mt-1 text-sm list-decimal list-inside text-gray-800 space-y-0.5">
+                <ol className="mt-1 text-sm list-decimal list-inside text-gray-800 dark:text-gray-200 space-y-0.5">
                     {items.map((item, index) => (
                         <li key={index} className="font-semibold">
-                           <span className="font-medium text-gray-600 break-words">{item}</span>
+                           <span className="font-medium text-gray-800 dark:text-gray-200 break-words">{item}</span>
                         </li>
                     ))}
                 </ol>
             ) : (
-                <p className="text-2xl font-bold text-gray-900">...</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">...</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{description}</p>
         </div>
     </div>
 );
@@ -80,31 +91,31 @@ const PendingApprovals: React.FC<{
   if (pendingCrew.length === 0) return null;
 
   return (
-    <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-lg shadow-sm mb-6">
-      <h2 className="text-lg font-bold text-yellow-900">Pending Crew Approvals</h2>
-      <p className="text-sm text-yellow-800 mt-1">
+    <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 p-4 rounded-lg shadow-sm mb-6">
+      <h2 className="text-lg font-bold text-yellow-900 dark:text-yellow-400">Pending Crew Approvals</h2>
+      <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
         A foreman has added the following people during a talk. Approve them to add them to the permanent crew roster.
       </p>
       <ul className="mt-4 space-y-2">
         {pendingCrew.map(member => (
-          <li key={member.id} className="flex items-center justify-between p-2 bg-white rounded-md border border-yellow-200">
+          <li key={member.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md border border-yellow-200 dark:border-yellow-800">
             <div>
-              <p className="font-semibold text-gray-900">{member.name}</p>
-              <p className="text-xs text-gray-500">
+              <p className="font-semibold text-gray-900 dark:text-white">{member.name}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Added by {member.source.foremanEmail} on {new Date(member.source.dateAdded).toLocaleDateString()}
               </p>
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => onRejectClick(member)}
-                className="p-2 rounded-full text-gray-500 bg-gray-100 hover:bg-red-100 hover:text-red-700 transition-colors"
+                className="p-2 rounded-full text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400 transition-colors"
                 title="Reject"
               >
                 <XIcon className="h-4 w-4" />
               </button>
               <button
                 onClick={() => onApprove(member)}
-                className="p-2 rounded-full text-gray-500 bg-gray-100 hover:bg-green-100 hover:text-green-700 transition-colors"
+                className="p-2 rounded-full text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-700 dark:hover:text-green-400 transition-colors"
                 title="Approve"
               >
                 <CheckIcon className="h-4 w-4" />
@@ -118,30 +129,53 @@ const PendingApprovals: React.FC<{
 };
 
 const OwnerEmptyState: React.FC = () => (
-    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6 text-center">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6 text-center transition-colors duration-200">
         <div className="max-w-md mx-auto">
-            <ClipboardListIcon className="w-16 h-16 mx-auto text-gray-300" />
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Welcome to SiteSafe!</h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <ClipboardListIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
+            <h2 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Welcome to SiteSafe!</h2>
+            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                 This is your central hub for safety compliance. To get started, you'll need to set up your company's data.
             </p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Link to="/admin/crew-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
-                    <UserGroupIcon className="h-8 w-8 text-brand-blue" />
-                    <span className="font-semibold text-gray-700">Add Crew</span>
+                <Link to="/admin/crew-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+                    <UserGroupIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Crew</span>
                 </Link>
-                <Link to="/admin/topic-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
-                    <BookOpenIcon className="h-8 w-8 text-brand-blue" />
-                    <span className="font-semibold text-gray-700">Add Topics</span>
+                <Link to="/admin/topic-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+                    <BookOpenIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Topics</span>
                 </Link>
-                <Link to="/admin/location-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-blue transition-colors">
-                    <MapPinIcon className="h-8 w-8 text-brand-blue" />
-                    <span className="font-semibold text-gray-700">Add Locations</span>
+                <Link to="/admin/location-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+                    <MapPinIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Locations</span>
                 </Link>
             </div>
         </div>
     </div>
 );
+
+const SortableHeader: React.FC<{ 
+  columnKey: SortableKey, 
+  title: string, 
+  sortConfig: SortConfig | null, 
+  onRequestSort: (key: SortableKey) => void 
+}> = ({ columnKey, title, sortConfig, onRequestSort }) => {
+  const isSorted = sortConfig?.key === columnKey;
+  const direction = sortConfig?.direction;
+  
+  return (
+     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider cursor-pointer group" onClick={() => onRequestSort(columnKey)}>
+         <div className="flex items-center space-x-1">
+             <span className="group-hover:text-gray-800 dark:group-hover:text-gray-300 group-hover:underline transition-colors">{title}</span>
+             {isSorted && (
+                 direction === 'ascending' 
+                 ? <ArrowUpIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" /> 
+                 : <ArrowDownIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" />
+             )}
+         </div>
+     </th>
+  );
+};
 
 
 const DashboardPage: React.FC = () => {
@@ -156,6 +190,7 @@ const DashboardPage: React.FC = () => {
 
   // State for confirmation modals
   const [memberToReject, setMemberToReject] = useState<PendingCrewMember | null>(null);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -211,7 +246,7 @@ const DashboardPage: React.FC = () => {
         return acc;
       }, {} as Record<string, number>);
 
-      return Object.entries(counts)
+      return (Object.entries(counts) as [string, number][])
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name, count]) => ({ name, count }));
@@ -411,11 +446,21 @@ const DashboardPage: React.FC = () => {
   }, [paginatedRecords, selectedRecordIds]);
 
   const handleDownload = (recordId: string) => {
-    showToast(`Initiating PDF download for talk record...`);
+    const record = records.find(r => r.id === recordId);
+    if (record) {
+        showToast(`Generating PDF for ${record.topic}...`, { type: 'info' });
+        try {
+            generateTalkRecordPDF(record);
+            showToast(`PDF downloaded.`, { type: 'success' });
+        } catch (error) {
+            console.error(error);
+            showToast(`Failed to generate PDF.`, { type: 'error' });
+        }
+    }
   };
 
   const handleBulkDownload = () => {
-    showToast(`Initiating bulk PDF download for ${selectedRecordIds.size} record(s).`);
+    showToast(`Selected ${selectedRecordIds.size} records. This would initiate a ZIP download in a production environment.`, { type: 'info' });
     setSelectedRecordIds(new Set());
   };
 
@@ -430,6 +475,53 @@ const DashboardPage: React.FC = () => {
         showToast(`${memberToReject.name} has been rejected.`, { type: 'info' });
         setMemberToReject(null);
     }
+  };
+
+  const handleConfirmReset = async () => {
+    await resetDb();
+    logout();
+    localStorage.clear();
+    window.location.reload();
+  };
+  
+  const handleBackup = async () => {
+    try {
+        showToast('Creating backup...', { type: 'info' });
+        const snapshot = await getDbSnapshot();
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sitesafe_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Backup created successfully.', { type: 'success' });
+    } catch (error) {
+        console.error(error);
+        showToast('Failed to create backup.', { type: 'error' });
+    }
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const json = JSON.parse(event.target?.result as string);
+            await restoreDbSnapshot(json);
+            showToast('Data restored successfully. Reloading...', { type: 'success' });
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to restore data. Invalid file.', { type: 'error' });
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleFeedbackSubmit = (feedback: FeedbackSubmission) => {
@@ -449,16 +541,8 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  const SortableHeader = ({ columnKey, title }: { columnKey: SortableKey, title: string }) => (
-     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-        <button onClick={() => requestSort(columnKey)} className="w-full text-left focus:outline-none group">
-          <span className="group-hover:text-gray-800 group-hover:underline transition-colors">{title}</span>
-        </button>
-     </th>
-  )
-
   return (
-    <div className="min-h-screen bg-brand-gray">
+    <div className="min-h-screen bg-brand-gray dark:bg-gray-900 transition-colors duration-200">
       <Header
         userEmail={user?.email}
         userRole={user?.role}
@@ -466,26 +550,26 @@ const DashboardPage: React.FC = () => {
         onFeedbackClick={() => setIsFeedbackModalOpen(true)}
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="border-b border-gray-200 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="mt-1 text-sm text-gray-600">Review safety talk records and manage company data.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">Review safety talk records and manage company data.</p>
               </div>
               <div className="mt-4 sm:mt-0 ml-0 sm:ml-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <Link to="/admin/crew-management" className="relative inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+                <Link to="/admin/crew-management" className="relative inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
                   <UserGroupIcon className="h-5 w-5" />
                   <span>Manage Crew</span>
                   {pendingCrew.length > 0 && (
-                     <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-yellow-900 ring-2 ring-white">
+                     <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-yellow-900 ring-2 ring-white dark:ring-gray-800">
                         {pendingCrew.length}
                      </span>
                   )}
                 </Link>
-                 <Link to="/admin/topic-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+                 <Link to="/admin/topic-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
                   <BookOpenIcon className="h-5 w-5" />
                   <span>Manage Topics</span>
                 </Link>
-                 <Link to="/admin/location-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+                 <Link to="/admin/location-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
                   <MapPinIcon className="h-5 w-5" />
                   <span>Manage Locations</span>
                 </Link>
@@ -493,10 +577,10 @@ const DashboardPage: React.FC = () => {
           </div>
           
           {loading ? (
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
-                <div className="flex flex-col items-center justify-center text-gray-500 py-16">
-                    <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue" />
-                    <h3 className="text-lg font-semibold text-gray-700">Loading Dashboard...</h3>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6">
+                <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 py-16">
+                    <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue dark:text-blue-400" />
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Dashboard...</h3>
                     <p className="text-sm">Please wait while we fetch the latest data.</p>
                 </div>
             </div>
@@ -510,7 +594,7 @@ const DashboardPage: React.FC = () => {
                 <>
                   {/* At-a-Glance Summary */}
                   <div className="mb-6">
-                      <h2 className="text-lg font-semibold text-gray-800 mb-3">At-a-Glance Summary</h2>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">At-a-Glance Summary</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="lg:col-span-1">
                               <MonthlyTalksChart data={dashboardStats.monthlyTalksData} />
@@ -536,25 +620,25 @@ const DashboardPage: React.FC = () => {
                   </div>
 
                   {/* Filter and Table Section */}
-                  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6 transition-colors duration-200">
                     <div className="pb-5">
-                      <h2 className="text-lg font-semibold text-gray-800">Toolbox Talk Records</h2>
-                      <p className="mt-1 text-sm text-gray-600">Review, filter, and download submitted safety talk reports.</p>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Toolbox Talk Records</h2>
+                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-400">Review, filter, and download submitted safety talk reports.</p>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                       <div className="grid grid-cols-2 gap-2">
                           <div>
-                              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start</label>
-                              <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
+                              <label htmlFor="startDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Start</label>
+                              <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading}/>
                           </div>
                           <div>
-                              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End</label>
-                              <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900" style={{ colorScheme: 'light' }} disabled={loading}/>
+                              <label htmlFor="endDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">End</label>
+                              <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading}/>
                           </div>
                         </div>
                       <div>
-                          <label htmlFor="Topic-multiselect" className="block text-sm font-medium text-gray-700">Topic</label>
+                          <label htmlFor="Topic-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Topic</label>
                           <MultiSelectDropdown
                             label="Topic"
                             options={uniqueTopics}
@@ -565,7 +649,7 @@ const DashboardPage: React.FC = () => {
                           />
                       </div>
                       <div>
-                          <label htmlFor="Foreman-multiselect" className="block text-sm font-medium text-gray-700">Foreman</label>
+                          <label htmlFor="Foreman-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Foreman</label>
                           <MultiSelectDropdown
                             label="Foreman"
                             options={uniqueForemen}
@@ -576,7 +660,7 @@ const DashboardPage: React.FC = () => {
                           />
                       </div>
                       <div>
-                          <label htmlFor="Location-multiselect" className="block text-sm font-medium text-gray-700">Location</label>
+                          <label htmlFor="Location-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Location</label>
                           <MultiSelectDropdown
                             label="Location"
                             options={uniqueLocations}
@@ -588,14 +672,14 @@ const DashboardPage: React.FC = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label htmlFor="minCrew" className="block text-sm font-medium text-gray-700">Min Crew</label>
+                            <label htmlFor="minCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Min Crew</label>
                             <select
                               name="minCrew"
                               id="minCrew"
                               value={filters.minCrew}
                               onChange={handleFilterChange}
-                              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
-                              style={{ colorScheme: 'light' }}
+                              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
+                              style={{ colorScheme: 'light dark' }}
                               disabled={loading}
                             >
                               <option value="">Any</option>
@@ -605,14 +689,14 @@ const DashboardPage: React.FC = () => {
                             </select>
                           </div>
                           <div>
-                            <label htmlFor="maxCrew" className="block text-sm font-medium text-gray-700">Max Crew</label>
+                            <label htmlFor="maxCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Max Crew</label>
                             <select
                               name="maxCrew"
                               id="maxCrew"
                               value={filters.maxCrew}
                               onChange={handleFilterChange}
-                              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900"
-                              style={{ colorScheme: 'light' }}
+                              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
+                              style={{ colorScheme: 'light dark' }}
                               disabled={loading}
                             >
                               <option value="">Any</option>
@@ -626,12 +710,12 @@ const DashboardPage: React.FC = () => {
                             <button 
                                 onClick={handleBulkDownload}
                                 disabled={selectedRecordIds.size === 0 || loading}
-                                className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                             >
                               <DownloadIcon className="h-4 w-4" />
                               <span>Download Selected ({selectedRecordIds.size})</span>
                             </button>
-                            <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
+                            <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
                               <ResetIcon className="h-4 w-4" />
                               <span>Reset Filters</span>
                             </button>
@@ -639,10 +723,10 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="shadow border-b border-gray-200 sm:rounded-lg bg-white">
+                  <div className="shadow border-b border-gray-200 dark:border-gray-700 sm:rounded-lg bg-white dark:bg-gray-800 overflow-hidden">
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-100 dark:bg-gray-700">
                           <tr>
                             <th scope="col" className="px-6 py-3">
                                 <span className="sr-only">Select row</span>
@@ -660,21 +744,21 @@ const DashboardPage: React.FC = () => {
                                     disabled={loading || paginatedRecords.length === 0}
                                 />
                             </th>
-                            <SortableHeader columnKey="dateTime" title="Date & Time" />
-                            <SortableHeader columnKey="topic" title="Topic" />
-                            <SortableHeader columnKey="foremanName" title="Foreman" />
-                            <SortableHeader columnKey="location" title="Location" />
-                            <SortableHeader columnKey="crewSize" title="Crew Size" />
-                            <SortableHeader columnKey="recordStatus" title="Status" />
-                            <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <SortableHeader columnKey="dateTime" title="Date & Time" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <SortableHeader columnKey="topic" title="Topic" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <SortableHeader columnKey="foremanName" title="Foreman" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <SortableHeader columnKey="location" title="Location" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <SortableHeader columnKey="crewSize" title="Crew Size" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <SortableHeader columnKey="recordStatus" title="Status" sortConfig={sortConfig} onRequestSort={requestSort} />
+                            <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
                               Actions
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                           {paginatedRecords.length > 0 ? (
                             paginatedRecords.map((record) => (
-                              <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50' : ''} ${record.recordStatus === 'flagged' ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'} transition-colors duration-150 ease-in-out`}>
+                              <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${record.recordStatus === 'flagged' ? 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'} transition-colors duration-150 ease-in-out`}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <input
                                     type="checkbox"
@@ -685,34 +769,37 @@ const DashboardPage: React.FC = () => {
                                     aria-label={`Select record ${record.id}`}
                                   />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateTime(record.dateTime)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.topic}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.foremanName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.location}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{record.crewSignatures.length}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{formatDateTime(record.dateTime)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{record.topic}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.foremanName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.location}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">{record.crewSignatures.length}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {record.recordStatus === 'flagged' ? (
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                            Correction Needed
-                                        </span>
-                                    ) : record.syncStatus === 'pending' ? (
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            Pending Sync
-                                        </span>
+                                    {record.syncStatus === 'pending' ? (
+                                        <div className="flex items-center text-amber-600 dark:text-amber-400" title="Saved locally, waiting to sync">
+                                            <CloudArrowUpIcon className="h-5 w-5 mr-2" />
+                                            <span className="font-medium">Saved Locally</span>
+                                        </div>
+                                    ) : record.recordStatus === 'flagged' ? (
+                                         <div className="flex items-center text-yellow-700 dark:text-yellow-400" title="Correction Needed">
+                                            <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                                            <span className="font-medium">Action Required</span>
+                                        </div>
                                     ) : (
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Submitted
-                                        </span>
+                                        <div className="flex items-center text-green-700 dark:text-green-400" title="Synced to cloud">
+                                            <CloudCheckIcon className="h-5 w-5 mr-2" />
+                                            <span className="font-medium">Synced</span>
+                                        </div>
                                     )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <div className="flex items-center justify-end space-x-4">
-                                    <Link to={`/talk-details/${record.id}`} className="text-brand-blue hover:text-brand-blue-dark hover:underline">
+                                    <Link to={`/talk-details/${record.id}`} className="text-brand-blue dark:text-blue-400 hover:text-brand-blue-dark dark:hover:text-blue-300 hover:underline">
                                       View
                                     </Link>
                                     <button
                                       onClick={() => handleDownload(record.id)}
-                                      className="text-gray-500 hover:text-brand-blue"
+                                      className="text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400"
                                       aria-label={`Download PDF for ${record.topic} on ${formatDateTime(record.dateTime)}`}
                                     >
                                       <DownloadIcon className="h-5 w-5" />
@@ -724,9 +811,9 @@ const DashboardPage: React.FC = () => {
                           ) : (
                             <tr>
                                 <td colSpan={8} className="text-center py-16">
-                                    <div className="flex flex-col items-center justify-center text-gray-500">
-                                        <SearchIcon className="w-12 h-12 mb-2 text-gray-400" />
-                                        <h3 className="text-lg font-semibold text-gray-700">No Records Found</h3>
+                                    <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                        <SearchIcon className="w-12 h-12 mb-2 text-gray-400 dark:text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">No Records Found</h3>
                                         <p className="text-sm">Try adjusting your filters to find what you're looking for.</p>
                                     </div>
                                 </td>
@@ -746,6 +833,33 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </>
               )}
+              <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Data Management</h2>
+                    <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <button
+                            onClick={handleBackup}
+                            className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                        >
+                            <ArrowDownTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+                            Backup Data (JSON)
+                        </button>
+                        <label className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+                            <ArrowUpTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+                            Restore Data
+                            <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+                        </label>
+                        <button
+                            onClick={() => setConfirmingReset(true)}
+                            className="inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-800 shadow-sm text-sm font-medium rounded-md text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                            <TrashIcon className="h-5 w-5 mr-2 text-red-500 dark:text-red-400" />
+                            Reset All Data
+                        </button>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        This is a local-first application. Backing up your data ensures you can restore it if you clear your browser cache or switch devices.
+                    </p>
+                </div>
             </>
           )}
 
@@ -764,6 +878,15 @@ const DashboardPage: React.FC = () => {
             confirmText="Reject"
         >
             Are you sure you want to reject <span className="font-bold">{memberToReject?.name}</span>? This action cannot be undone.
+        </ConfirmationModal>
+        <ConfirmationModal
+            isOpen={confirmingReset}
+            onClose={() => setConfirmingReset(false)}
+            onConfirm={handleConfirmReset}
+            title="Reset Demo Data"
+            confirmText="Reset & Reload"
+        >
+            This will <strong>permanently delete</strong> all local data, including talk records, custom crew members, topics, and locations. The app will reload with initial seed data. Are you sure?
         </ConfirmationModal>
     </div>
   );

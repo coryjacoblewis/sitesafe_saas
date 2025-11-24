@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import SearchIcon from './icons/SearchIcon';
@@ -66,7 +67,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ label, option
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 text-left flex justify-between items-center disabled:bg-gray-100 disabled:cursor-not-allowed"
+        className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white text-left flex justify-between items-center disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -75,19 +76,19 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ label, option
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg border border-gray-300 rounded-md">
-           <div className="p-2 border-b border-gray-200">
+        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg border border-gray-300 dark:border-gray-600 rounded-md">
+           <div className="p-2 border-b border-gray-200 dark:border-gray-700">
              <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-2">
-                   <SearchIcon className="h-4 w-4 text-gray-400" />
+                   <SearchIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                 </span>
                 <input
                   type="text"
                   placeholder={`Search ${label}s...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-2 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-gray-900 focus:ring-brand-blue focus:border-brand-blue"
-                  style={{ colorScheme: 'light' }}
+                  className="w-full pl-8 pr-2 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white focus:ring-brand-blue focus:border-brand-blue"
+                  style={{ colorScheme: 'light dark' }}
                   onClick={(e) => e.stopPropagation()} 
                 />
              </div>
@@ -98,7 +99,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ label, option
                   <li
                     key={option}
                     onClick={() => handleOptionClick(option)}
-                    className="cursor-pointer select-none relative py-2 pl-10 pr-4 hover:bg-blue-50"
+                    className="cursor-pointer select-none relative py-2 pl-10 pr-4 hover:bg-blue-50 dark:hover:bg-gray-700"
                     role="option"
                     aria-selected={selectedValues.includes(option)}
                   >
@@ -107,17 +108,17 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ label, option
                          type="checkbox"
                          checked={selectedValues.includes(option)}
                          readOnly
-                         className="absolute left-3 h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                         style={{ colorScheme: 'light' }}
+                         className="absolute left-3 h-4 w-4 rounded border-gray-300 dark:border-gray-500 text-brand-blue focus:ring-brand-blue"
+                         style={{ colorScheme: 'light dark' }}
                        />
-                       <span className={`font-normal block truncate text-gray-900 ${selectedValues.includes(option) ? 'font-medium' : 'font-normal'}`}>
+                       <span className={`font-normal block truncate text-gray-900 dark:text-gray-100 ${selectedValues.includes(option) ? 'font-medium' : 'font-normal'}`}>
                          {option}
                        </span>
                     </div>
                   </li>
                 ))
             ) : (
-                <li className="text-center text-sm text-gray-500 py-2 px-4">No results found</li>
+                <li className="text-center text-sm text-gray-500 dark:text-gray-400 py-2 px-4">No results found</li>
             )}
           </ul>
         </div>

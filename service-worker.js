@@ -1,20 +1,18 @@
 
 
-const STATIC_CACHE_NAME = 'sitesafe-static-v2'; // Incremented version to trigger update
+const STATIC_CACHE_NAME = 'sitesafe-static-v3'; // Incremented version
 const DYNAMIC_CACHE_NAME = 'sitesafe-data-v1';
 
 // Helper function to check if the request is for data.
-// In a real app, this would check for an API path like '/api/'.
-// Here, we'll check for our specific constant files.
 const isDataRequest = (url) => {
     const path = new URL(url).pathname;
     return path.includes('/constants/crewMembers.ts') ||
            path.includes('/constants/safetyTopics.ts') ||
-           path.includes('/constants/locations.ts');
+           path.includes('/constants/locations.ts') ||
+           path.includes('/constants.ts'); // Added constants.ts
 }
 
-// INSTALL: A minimalist install event. We cache the bare essentials.
-// The rest of the app shell will be cached on demand by the fetch handler.
+// INSTALL: A minimalist install event.
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -26,9 +24,10 @@ self.addEventListener('install', event => {
           '/index.html',
           '/manifest.json',
           '/vite.svg',
-          // Key entry points
           '/index.tsx',
-          '/App.tsx'
+          '/App.tsx',
+          '/constants.ts',
+          'https://cdn.tailwindcss.com' // Cache external style script for offline use
         ]);
       })
   );
@@ -65,12 +64,10 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.open(DYNAMIC_CACHE_NAME).then(cache => {
         return fetch(request).then(networkResponse => {
-          // If fetch is successful, cache the new response and return it.
           console.log(`[SW] Caching data: ${request.url}`);
           cache.put(request, networkResponse.clone());
           return networkResponse;
         }).catch(() => {
-          // If fetch fails (offline), return the cached response.
           console.log(`[SW] Serving data from cache: ${request.url}`);
           return cache.match(request);
         });
@@ -83,15 +80,12 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(request)
       .then(cachedResponse => {
-        // A cached response is found, return it.
         if (cachedResponse) {
           return cachedResponse;
         }
 
-        // No cache hit, fetch from network.
         return fetch(request).then(
           networkResponse => {
-            // Check if we received a valid response.
             if (!networkResponse || !['basic', 'cors', 'opaque'].includes(networkResponse.type)) {
               return networkResponse;
             }
@@ -99,7 +93,7 @@ self.addEventListener('fetch', event => {
             const responseToCache = networkResponse.clone();
             caches.open(STATIC_CACHE_NAME)
               .then(cache => {
-                 console.log(`[SW] Caching app shell resource: ${request.url}`);
+                 // We allow caching opaque responses (like CDNs)
                  cache.put(request, responseToCache);
               });
 
@@ -107,7 +101,6 @@ self.addEventListener('fetch', event => {
           }
         ).catch(error => {
             console.error(`[SW] Fetch failed for ${request.url}:`, error);
-            // This will result in a browser offline error page.
             throw error;
         });
       })
@@ -117,11 +110,10 @@ self.addEventListener('fetch', event => {
 // --- BACKGROUND SYNC ---
 
 const DB_NAME = 'siteSafeDB';
-const DB_VERSION = 2; // Must match the version in utils/db.ts
+const DB_VERSION = 3; // Must match the version in utils/db.ts
 const PENDING_SUBMISSIONS_STORE = 'pendingSubmissions';
 const TALK_RECORDS_STORE = 'talkRecords';
 
-// A simplified DB opener for the service worker context
 function openDb() {
   return new Promise((resolve, reject) => {
     const request = self.indexedDB.open(DB_NAME, DB_VERSION);
@@ -130,12 +122,9 @@ function openDb() {
       reject(request.error);
     };
     request.onsuccess = () => resolve(request.result);
-    // Note: onupgradeneeded is handled by the main application logic.
-    // The SW assumes the database schema is already up-to-date.
   });
 }
 
-// Helper to promisify an IDBRequest
 function promisifyRequest(request) {
     return new Promise((resolve, reject) => {
         request.onsuccess = () => resolve(request.result);
@@ -161,26 +150,17 @@ async function syncTalks() {
 
   for (const record of pendingRecords) {
     try {
-      // In a real application, this would be a fetch() call to your server.
-      // We simulate a successful network request.
       console.log(`[SW] Submitting record: ${record.id}`);
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
-
-      // If the "upload" is successful, update the record and move it.
+      
       record.syncStatus = 'synced';
-      
-      // Put it in the main 'talkRecords' store
       syncedStore.put(record);
-      
-      // Remove it from the 'pendingSubmissions' store
       pendingStore.delete(record.id);
 
       console.log(`[SW] Record ${record.id} synced successfully.`);
 
     } catch (error) {
-      console.error(`[SW] Failed to sync record ${record.id}. The browser will retry automatically.`, error);
-      // If any record fails, we throw to let the SyncManager know the sync failed.
-      // It will then retry the entire sync operation later.
+      console.error(`[SW] Failed to sync record ${record.id}.`, error);
       throw error; 
     }
   }

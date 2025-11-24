@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +19,7 @@ import ArrowUpIcon from '../../components/icons/ArrowUpIcon';
 import ArrowDownIcon from '../../components/icons/ArrowDownIcon';
 import ArrowUpTrayIcon from '../../components/icons/ArrowUpTrayIcon';
 import ArrowDownTrayIcon from '../../components/icons/ArrowDownTrayIcon';
+import { isNotEmpty, sanitizeString } from '../../utils/validation';
 
 
 interface ParsedRow {
@@ -67,17 +69,27 @@ const CrewManagementPage: React.FC = () => {
 
     const handleAddMember = (e: React.FormEvent) => {
         e.preventDefault();
-        addCrewMember(newMemberName);
-        showToast(`Crew member "${newMemberName}" added successfully.`, { type: 'success' });
+        if (!isNotEmpty(newMemberName)) {
+             showToast("Crew member name cannot be empty.", { type: 'error' });
+             return;
+        }
+        const sanitizedName = sanitizeString(newMemberName);
+        addCrewMember(sanitizedName);
+        showToast(`Crew member "${sanitizedName}" added successfully.`, { type: 'success' });
         setNewMemberName('');
         setIsAddModalOpen(false);
     };
     
     const handleUpdateMember = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isNotEmpty(newMemberName)) {
+             showToast("Crew member name cannot be empty.", { type: 'error' });
+             return;
+        }
         if (editingMember) {
-            updateCrewMember(editingMember.id, newMemberName);
-            showToast(`Crew member updated to "${newMemberName}".`, { type: 'success' });
+            const sanitizedName = sanitizeString(newMemberName);
+            updateCrewMember(editingMember.id, sanitizedName);
+            showToast(`Crew member updated to "${sanitizedName}".`, { type: 'success' });
         }
         setNewMemberName('');
         setEditingMember(null);
@@ -137,6 +149,25 @@ const CrewManagementPage: React.FC = () => {
         }
     };
     
+    const parseCSVLine = (line: string) => {
+        const result = [];
+        let current = '';
+        let inQuote = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                inQuote = !inQuote;
+            } else if (char === ',' && !inQuote) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        return result.map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"'));
+    }
+    
     const processCSV = (csvText: string) => {
         const rows = csvText.split(/\r?\n/).filter(Boolean);
         if (rows.length <= 1) {
@@ -144,7 +175,7 @@ const CrewManagementPage: React.FC = () => {
             return;
         }
 
-        const header = rows[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
+        const header = parseCSVLine(rows[0].toLowerCase());
         const nameIndex = header.indexOf('name');
         const statusIndex = header.indexOf('status');
         
@@ -153,20 +184,24 @@ const CrewManagementPage: React.FC = () => {
             return;
         }
 
-        const existingMembersMap = new Map(crewMembers.map(m => [m.name.toLowerCase(), m]));
+        const existingMembersMap = new Map<string, CrewMember>(crewMembers.map(m => [m.name.toLowerCase(), m]));
         const previewData: ParsedRow[] = [];
         
         for (let i = 1; i < rows.length; i++) {
-            const row = rows[i].split(',');
-            const name = (row[nameIndex] || '').trim().replace(/"/g, '');
-            const status = (row[statusIndex] || '').trim().toLowerCase() as 'active' | 'inactive';
+            const row = parseCSVLine(rows[i]);
+            // Ensure row has enough columns
+            if (row.length <= Math.max(nameIndex, statusIndex)) continue;
 
-            if (!name) {
+            const name = (row[nameIndex] || '').trim();
+            const statusStr = (row[statusIndex] || '').trim().toLowerCase();
+            const status = statusStr as 'active' | 'inactive';
+
+            if (!isNotEmpty(name)) {
                 previewData.push({ data: { name: '', status: 'active' }, status: 'error', error: 'Name is empty.' });
                 continue;
             }
             if (status !== 'active' && status !== 'inactive') {
-                previewData.push({ data: { name, status: 'active' }, status: 'error', error: `Invalid status: "${row[statusIndex]}". Use 'active' or 'inactive'.` });
+                previewData.push({ data: { name, status: 'active' }, status: 'error', error: `Invalid status: "${statusStr}". Use 'active' or 'inactive'.` });
                 continue;
             }
 
@@ -221,7 +256,7 @@ const CrewManagementPage: React.FC = () => {
     
     const renderMemberForm = (handleSubmit: (e: React.FormEvent) => void) => (
         <form onSubmit={handleSubmit}>
-            <label htmlFor="crewMemberName" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="crewMemberName" className="block text-sm font-bold text-gray-900">
                 Crew Member Name
             </label>
             <div className="mt-1">
@@ -273,7 +308,7 @@ const CrewManagementPage: React.FC = () => {
                           <HistoryActionIcon action={log.action} />
                           <div className="flex-1">
                               <p className="text-sm text-gray-800">{log.details}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">
+                              <p className="text-xs text-gray-600 mt-0.5">
                                  {log.actor && (
                                     <>
                                         by <span className="font-medium">{log.actor}</span> &bull;{' '}
@@ -334,9 +369,9 @@ const CrewManagementPage: React.FC = () => {
                         <table className="min-w-full divide-y divide-gray-200 text-sm">
                             <thead className="bg-gray-100 sticky top-0">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
-                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Status</th>
-                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Change / Error</th>
+                                    <th className="px-4 py-2 text-left font-bold text-gray-900">Name</th>
+                                    <th className="px-4 py-2 text-left font-bold text-gray-900">Status</th>
+                                    <th className="px-4 py-2 text-left font-bold text-gray-900">Change / Error</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -427,11 +462,11 @@ const CrewManagementPage: React.FC = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Modified</th>
-                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Name</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Date Added</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Last Modified</th>
+                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -447,8 +482,8 @@ const CrewManagementPage: React.FC = () => {
                                                     {member.status === 'active' ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(member.dateAdded)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(member.lastModified)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(member.dateAdded)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(member.lastModified)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <button onClick={() => openHistoryModal(member)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="View History">
                                                     <ClockIcon className="h-4 w-4" />
@@ -492,7 +527,7 @@ const CrewManagementPage: React.FC = () => {
                 title="Deactivate Crew Member"
                 confirmText="Deactivate"
             >
-                Are you sure you want to deactivate <span className="font-bold">{memberToDeactivate?.name}</span>? They will not be available for selection in new talks.
+                Are you sure you want to deactivate <span className="font-bold">{memberToDeactivate?.name}</span>? This action cannot be undone.
             </ConfirmationModal>
         </div>
     );

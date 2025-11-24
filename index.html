@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -22,18 +23,40 @@
         },
       }
     </script>
+    <style>
+      @media print {
+        header, footer, button, .no-print, nav {
+          display: none !important;
+        }
+        body {
+          background-color: white !important;
+          -webkit-print-color-adjust: exact;
+        }
+        #root {
+          height: auto;
+          overflow: visible;
+        }
+        .shadow-sm, .shadow, .shadow-lg {
+          box-shadow: none !important;
+        }
+        .border {
+          border: 1px solid #e5e7eb !important;
+        }
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3"
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3",
+    "jspdf": "https://esm.sh/jspdf@2.5.1"
   }
 }
 </script>
 </head>
-  <body class="bg-brand-gray">
+  <body class="bg-brand-gray dark:bg-gray-900 transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -17,6 +18,7 @@ import ArrowDownIcon from '../../components/icons/ArrowDownIcon';
 import PencilSquareIcon from '../../components/icons/PencilSquareIcon';
 import BookOpenIcon from '../../components/icons/BookOpenIcon';
 import DocumentTextIcon from '../../components/icons/DocumentTextIcon';
+import { isNotEmpty, sanitizeString } from '../../utils/validation';
 
 
 const TopicManagementPage: React.FC = () => {
@@ -52,18 +54,32 @@ const TopicManagementPage: React.FC = () => {
 
     const handleAddTopic = (e: React.FormEvent) => {
         e.preventDefault();
-        addSafetyTopic(topicName, topicContent);
-        showToast(`Topic "${topicName}" added successfully.`, { type: 'success' });
+        if (!isNotEmpty(topicName)) {
+            showToast("Topic name cannot be empty.", { type: 'error' });
+            return;
+        }
+        const sanitizedName = sanitizeString(topicName);
+        const sanitizedContent = sanitizeString(topicContent);
+
+        addSafetyTopic(sanitizedName, sanitizedContent, newPdfFile || undefined);
+        showToast(`Topic "${sanitizedName}" added successfully.`, { type: 'success' });
         setTopicName('');
         setTopicContent('');
+        setNewPdfFile(null);
         setIsAddModalOpen(false);
     };
     
     const handleUpdateTopic = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isNotEmpty(topicName)) {
+            showToast("Topic name cannot be empty.", { type: 'error' });
+            return;
+        }
         if (editingTopic) {
-            updateSafetyTopic(editingTopic.id, topicName, topicContent, newPdfFile || undefined);
-            showToast(`Topic "${topicName}" updated successfully.`, { type: 'success' });
+            const sanitizedName = sanitizeString(topicName);
+            const sanitizedContent = sanitizeString(topicContent);
+            updateSafetyTopic(editingTopic.id, sanitizedName, sanitizedContent, newPdfFile || undefined);
+            showToast(`Topic "${sanitizedName}" updated successfully.`, { type: 'success' });
         }
         setTopicName('');
         setTopicContent('');
@@ -131,7 +147,7 @@ const TopicManagementPage: React.FC = () => {
     const renderTopicForm = (handleSubmit: (e: React.FormEvent) => void, isEditing: boolean) => (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label htmlFor="topicName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="topicName" className="block text-sm font-bold text-gray-900">
                     Topic Name
                 </label>
                 <div className="mt-1">
@@ -150,7 +166,7 @@ const TopicManagementPage: React.FC = () => {
                 </div>
             </div>
              <div>
-                <label htmlFor="topicContent" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="topicContent" className="block text-sm font-bold text-gray-900">
                     Topic Content / Description
                 </label>
                 <div className="mt-1">
@@ -167,35 +183,36 @@ const TopicManagementPage: React.FC = () => {
                 </div>
             </div>
 
-            {isEditing && editingTopic && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                        PDF Document
-                    </label>
-                    <div className="mt-1 flex items-center justify-between p-2 border border-gray-300 rounded-md bg-gray-50">
-                        <div className="flex items-center space-x-2 truncate">
-                            <DocumentTextIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                            <span className="text-sm text-gray-800 truncate" title={newPdfFile?.name || extractFileName(editingTopic.pdfUrl)}>
-                                {newPdfFile?.name || extractFileName(editingTopic.pdfUrl)}
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-sm font-medium text-brand-blue hover:underline flex-shrink-0"
-                        >
-                            Change
-                        </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="application/pdf"
-                            className="hidden"
-                        />
+            <div>
+                <label className="block text-sm font-bold text-gray-900">
+                    PDF Document
+                </label>
+                <div className="mt-1 flex items-center justify-between p-2 border border-gray-300 rounded-md bg-gray-50">
+                    <div className="flex items-center space-x-2 truncate">
+                        <DocumentTextIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                        <span className="text-sm text-gray-800 truncate" title={newPdfFile?.name || (isEditing && editingTopic ? extractFileName(editingTopic.pdfUrl) : 'No file selected')}>
+                            {newPdfFile?.name || (isEditing && editingTopic ? extractFileName(editingTopic.pdfUrl) : 'No file selected')}
+                        </span>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-sm font-medium text-brand-blue hover:underline flex-shrink-0"
+                    >
+                        {newPdfFile || (isEditing && editingTopic) ? 'Change' : 'Upload'}
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="application/pdf"
+                        className="hidden"
+                    />
                 </div>
-            )}
+                {!isEditing && !newPdfFile && (
+                    <p className="mt-1 text-xs text-gray-500">If no file is uploaded, a placeholder will be used.</p>
+                )}
+            </div>
 
 
             <div className="pt-4 flex justify-end space-x-2">
@@ -236,7 +253,7 @@ const TopicManagementPage: React.FC = () => {
                           <HistoryActionIcon action={log.action} />
                           <div className="flex-1">
                               <p className="text-sm text-gray-800">{log.details}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">
+                              <p className="text-xs text-gray-600 mt-0.5">
                                  {log.actor && (
                                     <>
                                         by <span className="font-medium">{log.actor}</span> &bull;{' '}
@@ -270,7 +287,7 @@ const TopicManagementPage: React.FC = () => {
                                 <ChevronLeftIcon className="h-5 w-5" />
                                 <span>Dashboard</span>
                             </Link>
-                            <button onClick={() => { setTopicName(''); setTopicContent(''); setIsAddModalOpen(true); }} className="inline-flex items-center justify-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark">
+                            <button onClick={() => { setTopicName(''); setTopicContent(''); setNewPdfFile(null); setIsAddModalOpen(true); }} className="inline-flex items-center justify-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark">
                                 <BookOpenIcon className="h-5 w-5" />
                                 <span>Add Topic</span>
                             </button>
@@ -298,11 +315,11 @@ const TopicManagementPage: React.FC = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Modified</th>
-                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Name</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Date Added</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">Last Modified</th>
+                                        <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -318,8 +335,8 @@ const TopicManagementPage: React.FC = () => {
                                                     {topic.status === 'active' ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(topic.dateAdded)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(topic.lastModified)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(topic.dateAdded)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDateTime(topic.lastModified)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <button onClick={() => openHistoryModal(topic)} className="text-gray-600 hover:text-brand-blue inline-flex items-center space-x-1 p-1" title="View History">
                                                     <ClockIcon className="h-4 w-4" />

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -17,6 +18,7 @@ import CheckIcon from '../../components/icons/CheckIcon';
 import PencilIcon from '../../components/icons/PencilIcon';
 import XIcon from '../../components/icons/XIcon';
 import TrashIcon from '../../components/icons/TrashIcon';
+import { isNotEmpty, sanitizeString } from '../../utils/validation';
 
 const AmendTalkPage: React.FC = () => {
     const { talkId } = useParams<{ talkId: string }>();
@@ -76,18 +78,18 @@ const AmendTalkPage: React.FC = () => {
   
     const handleAddGuestMember = (e: React.FormEvent) => {
         e.preventDefault();
-        const trimmedName = guestName.trim();
-        if (trimmedName) {
-            const isDuplicate = crewMembers.some(cm => cm.name.toLowerCase() === trimmedName.toLowerCase()) || crew.some(c => c.name.toLowerCase() === trimmedName.toLowerCase());
-            if (isDuplicate) {
-                showToast(`A crew member named "${trimmedName}" already exists.`, { type: 'error' });
-                return;
-            }
-            const newGuest: CrewSignature = { name: trimmedName, signature: null, isGuest: true };
-            setCrew(prevCrew => [...prevCrew, newGuest]);
-            setGuestName('');
-            setIsGuestModalOpen(false);
+        if (!isNotEmpty(guestName)) return;
+
+        const trimmedName = sanitizeString(guestName);
+        const isDuplicate = crewMembers.some(cm => cm.name.toLowerCase() === trimmedName.toLowerCase()) || crew.some(c => c.name.toLowerCase() === trimmedName.toLowerCase());
+        if (isDuplicate) {
+            showToast(`A crew member named "${trimmedName}" already exists.`, { type: 'error' });
+            return;
         }
+        const newGuest: CrewSignature = { name: trimmedName, signature: null, isGuest: true };
+        setCrew(prevCrew => [...prevCrew, newGuest]);
+        setGuestName('');
+        setIsGuestModalOpen(false);
     };
 
     const handleRemoveCrewMember = (nameToRemove: string) => {
@@ -120,8 +122,8 @@ const AmendTalkPage: React.FC = () => {
             changes.push(`Location changed from "${originalTalk.location}" to "${location}".`);
         }
 
-        const originalCrewMap = new Map(originalTalk.crewSignatures.map(c => [c.name, c.signature]));
-        const newCrewMap = new Map(crew.map(c => [c.name, c.signature]));
+        const originalCrewMap = new Map<string, string | null>(originalTalk.crewSignatures.map(c => [c.name, c.signature]));
+        const newCrewMap = new Map<string, string | null>(crew.map(c => [c.name, c.signature]));
 
         // 2. Check for added/removed crew
         const added = [...newCrewMap.keys()].filter(name => !originalCrewMap.has(name));
@@ -151,10 +153,12 @@ const AmendTalkPage: React.FC = () => {
 
     const handleSubmitAmendment = async () => {
         if (!originalTalk || !user) return;
-        if (!amendmentReason.trim()) {
+        
+        if (!isNotEmpty(amendmentReason)) {
             showToast("Please provide a reason for the amendment.", { type: 'error' });
             return;
         }
+        const sanitizedReason = sanitizeString(amendmentReason);
 
         const changes = getChanges();
         if (changes.length === 0) {
@@ -172,7 +176,7 @@ const AmendTalkPage: React.FC = () => {
         const changeLog: ChangeLog = {
             timestamp: new Date().toISOString(),
             action: 'AMENDED',
-            details: `Report amended. Reason: "${amendmentReason.trim()}". Changes: ${changes.join(' ')}`,
+            details: `Report amended. Reason: "${sanitizedReason}". Changes: ${changes.join(' ')}`,
             actor: user.email,
         };
         
