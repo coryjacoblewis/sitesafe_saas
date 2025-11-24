@@ -44,7 +44,6 @@ const OwnerTalkDetailsPage: React.FC = () => {
     }, [talk, searchParams]);
 
     const handleFeedbackSubmit = (feedback: FeedbackSubmission) => {
-        console.log('Feedback submitted:', JSON.stringify(feedback, null, 2));
         setIsFeedbackModalOpen(false);
     };
 

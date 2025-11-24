@@ -47,39 +47,39 @@ interface SortConfig {
 }
 
 const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string | number; description: string }> = ({ icon, title, value, description }) => (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
-        <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
-            {icon}
-        </div>
-        <div>
-            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{description}</p>
-        </div>
+  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
+    <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
+      {icon}
     </div>
+    <div>
+      <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-400">{description}</p>
+    </div>
+  </div>
 );
 
 const ListStatCard: React.FC<{ icon: React.ReactNode; title: string; items: string[]; description: string; }> = ({ icon, title, items, description }) => (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
-        <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
-            {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
-            {items.length > 0 ? (
-                <ol className="mt-1 text-sm list-decimal list-inside text-gray-800 dark:text-gray-200 space-y-0.5">
-                    {items.map((item, index) => (
-                        <li key={index} className="font-semibold">
-                           <span className="font-medium text-gray-800 dark:text-gray-200 break-words">{item}</span>
-                        </li>
-                    ))}
-                </ol>
-            ) : (
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">...</p>
-            )}
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{description}</p>
-        </div>
+  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4 transition-colors duration-200">
+    <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-brand-blue rounded-lg text-white">
+      {icon}
     </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</p>
+      {items.length > 0 ? (
+        <ol className="mt-1 text-sm list-decimal list-inside text-gray-800 dark:text-gray-200 space-y-0.5">
+          {items.map((item, index) => (
+            <li key={index} className="font-semibold">
+              <span className="font-medium text-gray-800 dark:text-gray-200 break-words">{item}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-2xl font-bold text-gray-900 dark:text-white">...</p>
+      )}
+      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{description}</p>
+    </div>
+  </div>
 );
 
 
@@ -129,51 +129,51 @@ const PendingApprovals: React.FC<{
 };
 
 const OwnerEmptyState: React.FC = () => (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6 text-center transition-colors duration-200">
-        <div className="max-w-md mx-auto">
-            <ClipboardListIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
-            <h2 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Welcome to SiteSafe!</h2>
-            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                This is your central hub for safety compliance. To get started, you'll need to set up your company's data.
-            </p>
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Link to="/admin/crew-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
-                    <UserGroupIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Crew</span>
-                </Link>
-                <Link to="/admin/topic-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
-                    <BookOpenIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Topics</span>
-                </Link>
-                <Link to="/admin/location-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
-                    <MapPinIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Add Locations</span>
-                </Link>
-            </div>
-        </div>
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6 text-center transition-colors duration-200">
+    <div className="max-w-md mx-auto">
+      <ClipboardListIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
+      <h2 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Welcome to SiteSafe!</h2>
+      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+        This is your central hub for safety compliance. To get started, you'll need to set up your company's data.
+      </p>
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link to="/admin/crew-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+          <UserGroupIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+          <span className="font-semibold text-gray-800 dark:text-gray-200">Add Crew</span>
+        </Link>
+        <Link to="/admin/topic-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+          <BookOpenIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+          <span className="font-semibold text-gray-800 dark:text-gray-200">Add Topics</span>
+        </Link>
+        <Link to="/admin/location-management" className="inline-flex flex-col items-center justify-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-brand-blue transition-colors">
+          <MapPinIcon className="h-8 w-8 text-brand-blue dark:text-blue-400" />
+          <span className="font-semibold text-gray-800 dark:text-gray-200">Add Locations</span>
+        </Link>
+      </div>
     </div>
+  </div>
 );
 
-const SortableHeader: React.FC<{ 
-  columnKey: SortableKey, 
-  title: string, 
-  sortConfig: SortConfig | null, 
-  onRequestSort: (key: SortableKey) => void 
+const SortableHeader: React.FC<{
+  columnKey: SortableKey,
+  title: string,
+  sortConfig: SortConfig | null,
+  onRequestSort: (key: SortableKey) => void
 }> = ({ columnKey, title, sortConfig, onRequestSort }) => {
   const isSorted = sortConfig?.key === columnKey;
   const direction = sortConfig?.direction;
-  
+
   return (
-     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider cursor-pointer group" onClick={() => onRequestSort(columnKey)}>
-         <div className="flex items-center space-x-1">
-             <span className="group-hover:text-gray-800 dark:group-hover:text-gray-300 group-hover:underline transition-colors">{title}</span>
-             {isSorted && (
-                 direction === 'ascending' 
-                 ? <ArrowUpIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" /> 
-                 : <ArrowDownIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" />
-             )}
-         </div>
-     </th>
+    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider cursor-pointer group" onClick={() => onRequestSort(columnKey)}>
+      <div className="flex items-center space-x-1">
+        <span className="group-hover:text-gray-800 dark:group-hover:text-gray-300 group-hover:underline transition-colors">{title}</span>
+        {isSorted && (
+          direction === 'ascending'
+            ? <ArrowUpIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" />
+            : <ArrowDownIcon className="h-4 w-4 text-brand-blue dark:text-blue-400" />
+        )}
+      </div>
+    </th>
   );
 };
 
@@ -185,7 +185,7 @@ const DashboardPage: React.FC = () => {
   const { locations, loading: locationsLoading } = useLocations();
   const { pendingCrew, approveMember, rejectMember, loading: pendingCrewLoading } = usePendingCrew();
   const { showToast } = useToast();
-  
+
   const loading = recordsLoading || topicsLoading || locationsLoading || pendingCrewLoading;
 
   // State for confirmation modals
@@ -210,31 +210,31 @@ const DashboardPage: React.FC = () => {
     }
 
     const now = new Date();
-    
+
     // Monthly Talks Chart Data
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyTalksData: { month: string; count: number }[] = [];
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    
+
     for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        monthlyTalksData.push({ month: monthNames[date.getMonth()], count: 0 });
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthlyTalksData.push({ month: monthNames[date.getMonth()], count: 0 });
     }
 
     const recordsInLastSixMonths = records.filter(r => new Date(r.dateTime) >= sixMonthsAgo);
-    
+
     for (const record of recordsInLastSixMonths) {
-        const recordMonth = new Date(record.dateTime).getMonth();
-        const monthIndex = monthlyTalksData.findIndex(d => monthNames.indexOf(d.month) === recordMonth);
-        if (monthIndex > -1) {
-            monthlyTalksData[monthIndex].count++;
-        }
+      const recordMonth = new Date(record.dateTime).getMonth();
+      const monthIndex = monthlyTalksData.findIndex(d => monthNames.indexOf(d.month) === recordMonth);
+      if (monthIndex > -1) {
+        monthlyTalksData[monthIndex].count++;
+      }
     }
 
     // Signatures this month
     const recordsThisMonth = records.filter(r => {
-        const recordDate = new Date(r.dateTime);
-        return recordDate.getMonth() === now.getMonth() && recordDate.getFullYear() === now.getFullYear();
+      const recordDate = new Date(r.dateTime);
+      return recordDate.getMonth() === now.getMonth() && recordDate.getFullYear() === now.getFullYear();
     });
     const signaturesThisMonth = recordsThisMonth.reduce((sum, r) => sum + r.crewSignatures.length, 0);
 
@@ -253,13 +253,13 @@ const DashboardPage: React.FC = () => {
     };
 
     return {
-        monthlyTalksData,
-        signaturesThisMonth,
-        topTopics: getTopThree('topic'),
-        topForemen: getTopThree('foremanName').map(f => f.name), // Keep as string array for ListStatCard
+      monthlyTalksData,
+      signaturesThisMonth,
+      topTopics: getTopThree('topic'),
+      topForemen: getTopThree('foremanName').map(f => f.name), // Keep as string array for ListStatCard
     };
   }, [records, loading]);
-  
+
   const { uniqueTopics, uniqueForemen, uniqueLocations, uniqueCrewSizes } = useMemo(() => {
     const foremen = new Set<string>();
     const crewSizes = new Set<number>();
@@ -268,9 +268,9 @@ const DashboardPage: React.FC = () => {
       crewSizes.add(record.crewSignatures.length);
     });
     return {
-      uniqueTopics: [...safetyTopics].sort((a,b) => a.name.localeCompare(b.name)).map(t => t.name),
+      uniqueTopics: [...safetyTopics].sort((a, b) => a.name.localeCompare(b.name)).map(t => t.name),
       uniqueForemen: Array.from(foremen).sort(),
-      uniqueLocations: [...locations].sort((a,b) => a.name.localeCompare(b.name)).map(l => l.name),
+      uniqueLocations: [...locations].sort((a, b) => a.name.localeCompare(b.name)).map(l => l.name),
       uniqueCrewSizes: Array.from(crewSizes).sort((a, b) => a - b),
     };
   }, [records, safetyTopics, locations]);
@@ -284,16 +284,16 @@ const DashboardPage: React.FC = () => {
     startDate: '',
     endDate: '',
   });
-  
+
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(new Set());
 
-  
+
   const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
   }, []);
-  
+
   const handleMultiSelectChange = useCallback((name: 'topic' | 'foreman' | 'location', values: string[]) => {
     setFilters(prev => ({ ...prev, [name]: values }));
   }, []);
@@ -328,7 +328,7 @@ const DashboardPage: React.FC = () => {
       const recordDate = new Date(record.dateTime);
       const startDate = filters.startDate ? new Date(filters.startDate) : null;
       const endDate = filters.endDate ? new Date(filters.endDate) : null;
-      
+
       if (startDate) startDate.setHours(0, 0, 0, 0);
       if (endDate) endDate.setHours(23, 59, 59, 999);
 
@@ -354,30 +354,30 @@ const DashboardPage: React.FC = () => {
             bValue = b.crewSignatures.length;
             break;
           case 'dateTime':
-             aValue = new Date(a.dateTime).getTime();
-             bValue = new Date(b.dateTime).getTime();
-             break;
+            aValue = new Date(a.dateTime).getTime();
+            bValue = new Date(b.dateTime).getTime();
+            break;
           case 'syncStatus':
-              aValue = a.syncStatus || 'synced';
-              bValue = b.syncStatus || 'synced';
-              break;
+            aValue = a.syncStatus || 'synced';
+            bValue = b.syncStatus || 'synced';
+            break;
           case 'recordStatus':
-             aValue = a.recordStatus;
-             bValue = b.recordStatus;
-             break;
+            aValue = a.recordStatus;
+            bValue = b.recordStatus;
+            break;
           default:
             aValue = a[sortConfig.key];
             bValue = b[sortConfig.key];
         }
-        
+
         const compareResult = () => {
-             if (typeof aValue === 'number' && typeof bValue === 'number') {
-                return aValue - bValue;
-             }
-             if (typeof aValue === 'string' && typeof bValue === 'string') {
-                return aValue.localeCompare(bValue);
-             }
-             return 0;
+          if (typeof aValue === 'number' && typeof bValue === 'number') {
+            return aValue - bValue;
+          }
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            return aValue.localeCompare(bValue);
+          }
+          return 0;
         }
 
         return sortConfig.direction === 'ascending' ? compareResult() : -compareResult();
@@ -431,14 +431,14 @@ const DashboardPage: React.FC = () => {
       return newSelected;
     });
   }, [paginatedRecords, selectedRecordIds]);
-  
+
   const { isAllOnPageSelected, isIndeterminate } = useMemo(() => {
     if (paginatedRecords.length === 0) {
       return { isAllOnPageSelected: false, isIndeterminate: false };
     }
     const pageRecordIds = paginatedRecords.map(r => r.id);
     const selectedOnPageCount = pageRecordIds.filter(id => selectedRecordIds.has(id)).length;
-    
+
     const isAllOnPageSelected = selectedOnPageCount === pageRecordIds.length;
     const isIndeterminate = selectedOnPageCount > 0 && !isAllOnPageSelected;
 
@@ -448,14 +448,14 @@ const DashboardPage: React.FC = () => {
   const handleDownload = (recordId: string) => {
     const record = records.find(r => r.id === recordId);
     if (record) {
-        showToast(`Generating PDF for ${record.topic}...`, { type: 'info' });
-        try {
-            generateTalkRecordPDF(record);
-            showToast(`PDF downloaded.`, { type: 'success' });
-        } catch (error) {
-            console.error(error);
-            showToast(`Failed to generate PDF.`, { type: 'error' });
-        }
+      showToast(`Generating PDF for ${record.topic}...`, { type: 'info' });
+      try {
+        generateTalkRecordPDF(record);
+        showToast(`PDF downloaded.`, { type: 'success' });
+      } catch (error) {
+        console.error(error);
+        showToast(`Failed to generate PDF.`, { type: 'error' });
+      }
     }
   };
 
@@ -468,12 +468,12 @@ const DashboardPage: React.FC = () => {
     approveMember(member);
     showToast(`${member.name} has been approved and added to the crew roster.`, { type: 'success' });
   };
-  
+
   const handleConfirmReject = () => {
     if (memberToReject) {
-        rejectMember(memberToReject);
-        showToast(`${memberToReject.name} has been rejected.`, { type: 'info' });
-        setMemberToReject(null);
+      rejectMember(memberToReject);
+      showToast(`${memberToReject.name} has been rejected.`, { type: 'info' });
+      setMemberToReject(null);
     }
   };
 
@@ -483,24 +483,24 @@ const DashboardPage: React.FC = () => {
     localStorage.clear();
     window.location.reload();
   };
-  
+
   const handleBackup = async () => {
     try {
-        showToast('Creating backup...', { type: 'info' });
-        const snapshot = await getDbSnapshot();
-        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sitesafe_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('Backup created successfully.', { type: 'success' });
+      showToast('Creating backup...', { type: 'info' });
+      const snapshot = await getDbSnapshot();
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sitesafe_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Backup created successfully.', { type: 'success' });
     } catch (error) {
-        console.error(error);
-        showToast('Failed to create backup.', { type: 'error' });
+      console.error(error);
+      showToast('Failed to create backup.', { type: 'error' });
     }
   };
 
@@ -510,34 +510,33 @@ const DashboardPage: React.FC = () => {
 
     const reader = new FileReader();
     reader.onload = async (event) => {
-        try {
-            const json = JSON.parse(event.target?.result as string);
-            await restoreDbSnapshot(json);
-            showToast('Data restored successfully. Reloading...', { type: 'success' });
-            setTimeout(() => window.location.reload(), 1500);
-        } catch (error) {
-            console.error(error);
-            showToast('Failed to restore data. Invalid file.', { type: 'error' });
-        }
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        await restoreDbSnapshot(json);
+        showToast('Data restored successfully. Reloading...', { type: 'success' });
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (error) {
+        console.error(error);
+        showToast('Failed to restore data. Invalid file.', { type: 'error' });
+      }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
   const handleFeedbackSubmit = (feedback: FeedbackSubmission) => {
-    console.log('Feedback submitted:', JSON.stringify(feedback, null, 2));
     // The success toast is now shown inside the FeedbackModal itself
     setIsFeedbackModalOpen(false);
   };
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
   };
 
@@ -550,318 +549,318 @@ const DashboardPage: React.FC = () => {
         onFeedbackClick={() => setIsFeedbackModalOpen(true)}
       />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="border-b border-gray-200 dark:border-gray-700 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">Review safety talk records and manage company data.</p>
-              </div>
-              <div className="mt-4 sm:mt-0 ml-0 sm:ml-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <Link to="/admin/crew-management" className="relative inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
-                  <UserGroupIcon className="h-5 w-5" />
-                  <span>Manage Crew</span>
-                  {pendingCrew.length > 0 && (
-                     <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-yellow-900 ring-2 ring-white dark:ring-gray-800">
-                        {pendingCrew.length}
-                     </span>
-                  )}
-                </Link>
-                 <Link to="/admin/topic-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
-                  <BookOpenIcon className="h-5 w-5" />
-                  <span>Manage Topics</span>
-                </Link>
-                 <Link to="/admin/location-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
-                  <MapPinIcon className="h-5 w-5" />
-                  <span>Manage Locations</span>
-                </Link>
-              </div>
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">Review safety talk records and manage company data.</p>
           </div>
-          
-          {loading ? (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6">
-                <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 py-16">
-                    <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue dark:text-blue-400" />
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Dashboard...</h3>
-                    <p className="text-sm">Please wait while we fetch the latest data.</p>
-                </div>
-            </div>
-          ) : (
-            <>
-              <PendingApprovals pendingCrew={pendingCrew} onApprove={handleApproveMember} onRejectClick={setMemberToReject} />
-              
-              {records.length === 0 && pendingCrew.length === 0 ? (
-                <OwnerEmptyState />
-              ) : (
-                <>
-                  {/* At-a-Glance Summary */}
-                  <div className="mb-6">
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">At-a-Glance Summary</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="lg:col-span-1">
-                              <MonthlyTalksChart data={dashboardStats.monthlyTalksData} />
-                          </div>
-                          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <TopTopicsChart data={dashboardStats.topTopics} />
-                              <div className="grid grid-rows-2 gap-4">
-                                  <StatCard 
-                                      icon={<PencilSquareIcon className="h-6 w-6" />}
-                                      title="Total Signatures"
-                                      value={dashboardStats.signaturesThisMonth}
-                                      description="This Month"
-                                  />
-                                  <ListStatCard 
-                                      icon={<UserGroupIcon className="h-6 w-6" />}
-                                      title="Top 3 Foremen"
-                                      items={dashboardStats.topForemen}
-                                      description="By Talks Conducted"
-                                  />
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-
-                  {/* Filter and Table Section */}
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6 transition-colors duration-200">
-                    <div className="pb-5">
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Toolbox Talk Records</h2>
-                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-400">Review, filter, and download submitted safety talk reports.</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                      <div className="grid grid-cols-2 gap-2">
-                          <div>
-                              <label htmlFor="startDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Start</label>
-                              <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading}/>
-                          </div>
-                          <div>
-                              <label htmlFor="endDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">End</label>
-                              <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading}/>
-                          </div>
-                        </div>
-                      <div>
-                          <label htmlFor="Topic-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Topic</label>
-                          <MultiSelectDropdown
-                            label="Topic"
-                            options={uniqueTopics}
-                            selectedValues={filters.topic}
-                            onChange={(values) => handleMultiSelectChange('topic', values)}
-                            disabled={loading}
-                            placeholder="All Topics"
-                          />
-                      </div>
-                      <div>
-                          <label htmlFor="Foreman-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Foreman</label>
-                          <MultiSelectDropdown
-                            label="Foreman"
-                            options={uniqueForemen}
-                            selectedValues={filters.foreman}
-                            onChange={(values) => handleMultiSelectChange('foreman', values)}
-                            disabled={loading}
-                            placeholder="All Foremen"
-                          />
-                      </div>
-                      <div>
-                          <label htmlFor="Location-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Location</label>
-                          <MultiSelectDropdown
-                            label="Location"
-                            options={uniqueLocations}
-                            selectedValues={filters.location}
-                            onChange={(values) => handleMultiSelectChange('location', values)}
-                            disabled={loading}
-                            placeholder="All Locations"
-                          />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label htmlFor="minCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Min Crew</label>
-                            <select
-                              name="minCrew"
-                              id="minCrew"
-                              value={filters.minCrew}
-                              onChange={handleFilterChange}
-                              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
-                              style={{ colorScheme: 'light dark' }}
-                              disabled={loading}
-                            >
-                              <option value="">Any</option>
-                              {uniqueCrewSizes.map(size => (
-                                <option key={size} value={size}>{size}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label htmlFor="maxCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Max Crew</label>
-                            <select
-                              name="maxCrew"
-                              id="maxCrew"
-                              value={filters.maxCrew}
-                              onChange={handleFilterChange}
-                              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
-                              style={{ colorScheme: 'light dark' }}
-                              disabled={loading}
-                            >
-                              <option value="">Any</option>
-                              {uniqueCrewSizes.map(size => (
-                                <option key={size} value={size}>{size}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="sm:col-span-2 lg:col-span-5 flex items-end justify-end space-x-2 pt-4 lg:pt-0">
-                            <button 
-                                onClick={handleBulkDownload}
-                                disabled={selectedRecordIds.size === 0 || loading}
-                                className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-                            >
-                              <DownloadIcon className="h-4 w-4" />
-                              <span>Download Selected ({selectedRecordIds.size})</span>
-                            </button>
-                            <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
-                              <ResetIcon className="h-4 w-4" />
-                              <span>Reset Filters</span>
-                            </button>
-                        </div>
-                    </div>
-                  </div>
-
-                  <div className="shadow border-b border-gray-200 dark:border-gray-700 sm:rounded-lg bg-white dark:bg-gray-800 overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-100 dark:bg-gray-700">
-                          <tr>
-                            <th scope="col" className="px-6 py-3">
-                                <span className="sr-only">Select row</span>
-                                <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
-                                    style={{ colorScheme: 'light' }}
-                                    checked={isAllOnPageSelected}
-                                    ref={el => {
-                                        if (el) {
-                                            el.indeterminate = isIndeterminate;
-                                        }
-                                    }}
-                                    onChange={handleSelectAll}
-                                    disabled={loading || paginatedRecords.length === 0}
-                                />
-                            </th>
-                            <SortableHeader columnKey="dateTime" title="Date & Time" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <SortableHeader columnKey="topic" title="Topic" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <SortableHeader columnKey="foremanName" title="Foreman" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <SortableHeader columnKey="location" title="Location" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <SortableHeader columnKey="crewSize" title="Crew Size" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <SortableHeader columnKey="recordStatus" title="Status" sortConfig={sortConfig} onRequestSort={requestSort} />
-                            <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {paginatedRecords.length > 0 ? (
-                            paginatedRecords.map((record) => (
-                              <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${record.recordStatus === 'flagged' ? 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'} transition-colors duration-150 ease-in-out`}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
-                                    style={{ colorScheme: 'light' }}
-                                    checked={selectedRecordIds.has(record.id)}
-                                    onChange={() => handleSelectRecord(record.id)}
-                                    aria-label={`Select record ${record.id}`}
-                                  />
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{formatDateTime(record.dateTime)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{record.topic}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.foremanName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.location}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">{record.crewSignatures.length}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {record.syncStatus === 'pending' ? (
-                                        <div className="flex items-center text-amber-600 dark:text-amber-400" title="Saved locally, waiting to sync">
-                                            <CloudArrowUpIcon className="h-5 w-5 mr-2" />
-                                            <span className="font-medium">Saved Locally</span>
-                                        </div>
-                                    ) : record.recordStatus === 'flagged' ? (
-                                         <div className="flex items-center text-yellow-700 dark:text-yellow-400" title="Correction Needed">
-                                            <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                                            <span className="font-medium">Action Required</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center text-green-700 dark:text-green-400" title="Synced to cloud">
-                                            <CloudCheckIcon className="h-5 w-5 mr-2" />
-                                            <span className="font-medium">Synced</span>
-                                        </div>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <div className="flex items-center justify-end space-x-4">
-                                    <Link to={`/talk-details/${record.id}`} className="text-brand-blue dark:text-blue-400 hover:text-brand-blue-dark dark:hover:text-blue-300 hover:underline">
-                                      View
-                                    </Link>
-                                    <button
-                                      onClick={() => handleDownload(record.id)}
-                                      className="text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400"
-                                      aria-label={`Download PDF for ${record.topic} on ${formatDateTime(record.dateTime)}`}
-                                    >
-                                      <DownloadIcon className="h-5 w-5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                                <td colSpan={8} className="text-center py-16">
-                                    <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-                                        <SearchIcon className="w-12 h-12 mb-2 text-gray-400 dark:text-gray-600" />
-                                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">No Records Found</h3>
-                                        <p className="text-sm">Try adjusting your filters to find what you're looking for.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={Math.ceil(totalItems / itemsPerPage)}
-                        onPageChange={setCurrentPage}
-                        itemsPerPage={itemsPerPage}
-                        onItemsPerPageChange={setItemsPerPage}
-                        totalItems={totalItems}
-                    />
-                  </div>
-                </>
+          <div className="mt-4 sm:mt-0 ml-0 sm:ml-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <Link to="/admin/crew-management" className="relative inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+              <UserGroupIcon className="h-5 w-5" />
+              <span>Manage Crew</span>
+              {pendingCrew.length > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-yellow-900 ring-2 ring-white dark:ring-gray-800">
+                  {pendingCrew.length}
+                </span>
               )}
-              <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Data Management</h2>
-                    <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                        <button
-                            onClick={handleBackup}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                        >
-                            <ArrowDownTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
-                            Backup Data (JSON)
-                        </button>
-                        <label className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors">
-                            <ArrowUpTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
-                            Restore Data
-                            <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
-                        </label>
-                        <button
-                            onClick={() => setConfirmingReset(true)}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-800 shadow-sm text-sm font-medium rounded-md text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                            <TrashIcon className="h-5 w-5 mr-2 text-red-500 dark:text-red-400" />
-                            Reset All Data
-                        </button>
+            </Link>
+            <Link to="/admin/topic-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+              <BookOpenIcon className="h-5 w-5" />
+              <span>Manage Topics</span>
+            </Link>
+            <Link to="/admin/location-management" className="inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue">
+              <MapPinIcon className="h-5 w-5" />
+              <span>Manage Locations</span>
+            </Link>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6">
+            <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 py-16">
+              <SpinnerIcon className="w-12 h-12 mb-4 text-brand-blue dark:text-blue-400" />
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Dashboard...</h3>
+              <p className="text-sm">Please wait while we fetch the latest data.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <PendingApprovals pendingCrew={pendingCrew} onApprove={handleApproveMember} onRejectClick={setMemberToReject} />
+
+            {records.length === 0 && pendingCrew.length === 0 ? (
+              <OwnerEmptyState />
+            ) : (
+              <>
+                {/* At-a-Glance Summary */}
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">At-a-Glance Summary</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-1">
+                      <MonthlyTalksChart data={dashboardStats.monthlyTalksData} />
                     </div>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        This is a local-first application. Backing up your data ensures you can restore it if you clear your browser cache or switch devices.
-                    </p>
+                    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <TopTopicsChart data={dashboardStats.topTopics} />
+                      <div className="grid grid-rows-2 gap-4">
+                        <StatCard
+                          icon={<PencilSquareIcon className="h-6 w-6" />}
+                          title="Total Signatures"
+                          value={dashboardStats.signaturesThisMonth}
+                          description="This Month"
+                        />
+                        <ListStatCard
+                          icon={<UserGroupIcon className="h-6 w-6" />}
+                          title="Top 3 Foremen"
+                          items={dashboardStats.topForemen}
+                          description="By Talks Conducted"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-            </>
-          )}
+
+                {/* Filter and Table Section */}
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6 transition-colors duration-200">
+                  <div className="pb-5">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Toolbox Talk Records</h2>
+                    <p className="mt-1 text-sm text-gray-700 dark:text-gray-400">Review, filter, and download submitted safety talk reports.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="startDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Start</label>
+                        <input type="date" name="startDate" id="startDate" value={filters.startDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading} />
+                      </div>
+                      <div>
+                        <label htmlFor="endDate" className="block text-sm font-bold text-gray-900 dark:text-gray-300">End</label>
+                        <input type="date" name="endDate" id="endDate" value={filters.endDate} onChange={handleFilterChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white" style={{ colorScheme: 'light dark' }} disabled={loading} />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="Topic-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Topic</label>
+                      <MultiSelectDropdown
+                        label="Topic"
+                        options={uniqueTopics}
+                        selectedValues={filters.topic}
+                        onChange={(values) => handleMultiSelectChange('topic', values)}
+                        disabled={loading}
+                        placeholder="All Topics"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="Foreman-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Foreman</label>
+                      <MultiSelectDropdown
+                        label="Foreman"
+                        options={uniqueForemen}
+                        selectedValues={filters.foreman}
+                        onChange={(values) => handleMultiSelectChange('foreman', values)}
+                        disabled={loading}
+                        placeholder="All Foremen"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="Location-multiselect" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Location</label>
+                      <MultiSelectDropdown
+                        label="Location"
+                        options={uniqueLocations}
+                        selectedValues={filters.location}
+                        onChange={(values) => handleMultiSelectChange('location', values)}
+                        disabled={loading}
+                        placeholder="All Locations"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="minCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Min Crew</label>
+                        <select
+                          name="minCrew"
+                          id="minCrew"
+                          value={filters.minCrew}
+                          onChange={handleFilterChange}
+                          className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
+                          style={{ colorScheme: 'light dark' }}
+                          disabled={loading}
+                        >
+                          <option value="">Any</option>
+                          {uniqueCrewSizes.map(size => (
+                            <option key={size} value={size}>{size}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="maxCrew" className="block text-sm font-bold text-gray-900 dark:text-gray-300">Max Crew</label>
+                        <select
+                          name="maxCrew"
+                          id="maxCrew"
+                          value={filters.maxCrew}
+                          onChange={handleFilterChange}
+                          className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm text-gray-900 dark:text-white"
+                          style={{ colorScheme: 'light dark' }}
+                          disabled={loading}
+                        >
+                          <option value="">Any</option>
+                          {uniqueCrewSizes.map(size => (
+                            <option key={size} value={size}>{size}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2 lg:col-span-5 flex items-end justify-end space-x-2 pt-4 lg:pt-0">
+                      <button
+                        onClick={handleBulkDownload}
+                        disabled={selectedRecordIds.size === 0 || loading}
+                        className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      >
+                        <DownloadIcon className="h-4 w-4" />
+                        <span>Download Selected ({selectedRecordIds.size})</span>
+                      </button>
+                      <button onClick={resetFilters} disabled={loading} className="w-full sm:w-auto justify-center inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:bg-gray-300 disabled:cursor-not-allowed">
+                        <ResetIcon className="h-4 w-4" />
+                        <span>Reset Filters</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="shadow border-b border-gray-200 dark:border-gray-700 sm:rounded-lg bg-white dark:bg-gray-800 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                          <th scope="col" className="px-6 py-3">
+                            <span className="sr-only">Select row</span>
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
+                              style={{ colorScheme: 'light' }}
+                              checked={isAllOnPageSelected}
+                              ref={el => {
+                                if (el) {
+                                  el.indeterminate = isIndeterminate;
+                                }
+                              }}
+                              onChange={handleSelectAll}
+                              disabled={loading || paginatedRecords.length === 0}
+                            />
+                          </th>
+                          <SortableHeader columnKey="dateTime" title="Date & Time" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <SortableHeader columnKey="topic" title="Topic" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <SortableHeader columnKey="foremanName" title="Foreman" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <SortableHeader columnKey="location" title="Location" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <SortableHeader columnKey="crewSize" title="Crew Size" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <SortableHeader columnKey="recordStatus" title="Status" sortConfig={sortConfig} onRequestSort={requestSort} />
+                          <th scope="col" className="relative px-6 py-3 text-right text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {paginatedRecords.length > 0 ? (
+                          paginatedRecords.map((record) => (
+                            <tr key={record.id} className={`${selectedRecordIds.has(record.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${record.recordStatus === 'flagged' ? 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'} transition-colors duration-150 ease-in-out`}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-400 bg-gray-100 text-brand-blue focus:ring-brand-blue"
+                                  style={{ colorScheme: 'light' }}
+                                  checked={selectedRecordIds.has(record.id)}
+                                  onChange={() => handleSelectRecord(record.id)}
+                                  aria-label={`Select record ${record.id}`}
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{formatDateTime(record.dateTime)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{record.topic}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.foremanName}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{record.location}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-center">{record.crewSignatures.length}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {record.syncStatus === 'pending' ? (
+                                  <div className="flex items-center text-amber-600 dark:text-amber-400" title="Saved locally, waiting to sync">
+                                    <CloudArrowUpIcon className="h-5 w-5 mr-2" />
+                                    <span className="font-medium">Saved Locally</span>
+                                  </div>
+                                ) : record.recordStatus === 'flagged' ? (
+                                  <div className="flex items-center text-yellow-700 dark:text-yellow-400" title="Correction Needed">
+                                    <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                                    <span className="font-medium">Action Required</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center text-green-700 dark:text-green-400" title="Synced to cloud">
+                                    <CloudCheckIcon className="h-5 w-5 mr-2" />
+                                    <span className="font-medium">Synced</span>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex items-center justify-end space-x-4">
+                                  <Link to={`/talk-details/${record.id}`} className="text-brand-blue dark:text-blue-400 hover:text-brand-blue-dark dark:hover:text-blue-300 hover:underline">
+                                    View
+                                  </Link>
+                                  <button
+                                    onClick={() => handleDownload(record.id)}
+                                    className="text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400"
+                                    aria-label={`Download PDF for ${record.topic} on ${formatDateTime(record.dateTime)}`}
+                                  >
+                                    <DownloadIcon className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="text-center py-16">
+                              <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                <SearchIcon className="w-12 h-12 mb-2 text-gray-400 dark:text-gray-600" />
+                                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">No Records Found</h3>
+                                <p className="text-sm">Try adjusting your filters to find what you're looking for.</p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalItems / itemsPerPage)}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    totalItems={totalItems}
+                  />
+                </div>
+              </>
+            )}
+            <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Data Management</h2>
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                <button
+                  onClick={handleBackup}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+                  Backup Data (JSON)
+                </button>
+                <label className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+                  <ArrowUpTrayIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+                  Restore Data
+                  <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+                </label>
+                <button
+                  onClick={() => setConfirmingReset(true)}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-800 shadow-sm text-sm font-medium rounded-md text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <TrashIcon className="h-5 w-5 mr-2 text-red-500 dark:text-red-400" />
+                  Reset All Data
+                </button>
+              </div>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                This is a local-first application. Backing up your data ensures you can restore it if you clear your browser cache or switch devices.
+              </p>
+            </div>
+          </>
+        )}
 
       </main>
       <FeedbackModal
@@ -870,24 +869,24 @@ const DashboardPage: React.FC = () => {
         onSubmit={handleFeedbackSubmit}
         userEmail={user?.email}
       />
-       <ConfirmationModal
-            isOpen={!!memberToReject}
-            onClose={() => setMemberToReject(null)}
-            onConfirm={handleConfirmReject}
-            title="Reject Crew Member"
-            confirmText="Reject"
-        >
-            Are you sure you want to reject <span className="font-bold">{memberToReject?.name}</span>? This action cannot be undone.
-        </ConfirmationModal>
-        <ConfirmationModal
-            isOpen={confirmingReset}
-            onClose={() => setConfirmingReset(false)}
-            onConfirm={handleConfirmReset}
-            title="Reset Demo Data"
-            confirmText="Reset & Reload"
-        >
-            This will <strong>permanently delete</strong> all local data, including talk records, custom crew members, topics, and locations. The app will reload with initial seed data. Are you sure?
-        </ConfirmationModal>
+      <ConfirmationModal
+        isOpen={!!memberToReject}
+        onClose={() => setMemberToReject(null)}
+        onConfirm={handleConfirmReject}
+        title="Reject Crew Member"
+        confirmText="Reject"
+      >
+        Are you sure you want to reject <span className="font-bold">{memberToReject?.name}</span>? This action cannot be undone.
+      </ConfirmationModal>
+      <ConfirmationModal
+        isOpen={confirmingReset}
+        onClose={() => setConfirmingReset(false)}
+        onConfirm={handleConfirmReset}
+        title="Reset Demo Data"
+        confirmText="Reset & Reload"
+      >
+        This will <strong>permanently delete</strong> all local data, including talk records, custom crew members, topics, and locations. The app will reload with initial seed data. Are you sure?
+      </ConfirmationModal>
     </div>
   );
 };

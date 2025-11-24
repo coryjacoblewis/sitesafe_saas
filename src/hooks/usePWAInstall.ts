@@ -1,6 +1,15 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
 interface PWAInstallContextType {
   isInstallable: boolean;
   installApp: () => Promise<void>;
@@ -9,23 +18,22 @@ interface PWAInstallContextType {
 const PWAInstallContext = createContext<PWAInstallContextType | undefined>(undefined);
 
 export const PWAInstallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      const event = e as BeforeInstallPromptEvent;
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
       // Stash the event so it can be triggered later.
-      setDeferredPrompt(e);
+      setDeferredPrompt(event);
       setIsInstallable(true);
-      console.log("👋 beforeinstallprompt event fired");
     };
 
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       setIsInstallable(false);
-      console.log('PWA was installed');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -45,7 +53,6 @@ export const PWAInstallProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
 
     // We've used the prompt, and can't use it again, throw it away
     setDeferredPrompt(null);

@@ -24,17 +24,16 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     try {
       let syncedRecords = await getAll<TalkRecord>(TALK_RECORDS_STORE);
-      
+
       if (syncedRecords.length === 0) {
-        console.log('Seeding IndexedDB with initial talk records.');
         const recordsToSeed = MOCK_TALK_RECORDS.filter(r => r.syncStatus === 'synced');
         await Promise.all(recordsToSeed.map(record => put(TALK_RECORDS_STORE, record)));
         syncedRecords = recordsToSeed;
       }
 
       const pendingRecords = await getAll<TalkRecord>(PENDING_SUBMISSIONS_STORE);
-      
-      setRecords([...pendingRecords, ...syncedRecords].sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
+
+      setRecords([...pendingRecords, ...syncedRecords].sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
 
     } catch (error) {
       console.error("Failed to load records from IndexedDB, falling back to initial data.", error);
@@ -47,13 +46,12 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     loadData();
   }, [loadData]);
-  
+
   // Manual sync fallback for browsers without Background Sync (e.g., Safari)
   // and eager sync for all browsers when app is opened or comes online.
   useEffect(() => {
     const triggerManualSync = async () => {
       if (!navigator.onLine) {
-        console.log("Offline, skipping manual sync check.");
         return;
       }
 
@@ -62,26 +60,21 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return;
       }
 
-      console.log(`[Manual Sync] Found ${pendingRecords.length} pending records. Starting sync.`);
-
       for (const record of pendingRecords) {
         try {
           // Simulate network upload
           await new Promise(resolve => setTimeout(resolve, 300));
           const syncedRecord = { ...record, syncStatus: 'synced' as const };
-          
+
           await put(TALK_RECORDS_STORE, syncedRecord);
           await deleteItem(PENDING_SUBMISSIONS_STORE, record.id);
-
-          console.log(`[Manual Sync] Synced record ${record.id}`);
         } catch (error) {
           console.error(`[Manual Sync] Failed to sync record ${record.id}. Will retry on next app load/online event.`, error);
           // Stop on first error to avoid hammering a potentially broken API
-          return; 
+          return;
         }
       }
 
-      console.log("[Manual Sync] Sync complete. Reloading records for UI update.");
       await loadData();
     };
 
@@ -95,14 +88,14 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateTalkRecord = useCallback(async (talkId: string, updates: Partial<TalkRecord>, changeLogEntry: ChangeLog) => {
     const recordToUpdate = records.find(r => r.id === talkId);
     if (!recordToUpdate) {
-        console.error("Record not found for update:", talkId);
-        return;
+      console.error("Record not found for update:", talkId);
+      return;
     }
 
     const updatedRecord: TalkRecord = {
-        ...recordToUpdate,
-        ...updates,
-        history: [...recordToUpdate.history, changeLogEntry],
+      ...recordToUpdate,
+      ...updates,
+      history: [...recordToUpdate.history, changeLogEntry],
     };
 
     // Determine which store it's in
@@ -129,12 +122,12 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
         actor: recordData.foremanName,
       }],
     };
-    
+
     // Save to the pending queue
     await put(PENDING_SUBMISSIONS_STORE, newRecord);
 
     // Update state for immediate UI feedback
-    setRecords(prevRecords => [newRecord, ...prevRecords].sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
+    setRecords(prevRecords => [newRecord, ...prevRecords].sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
 
     // Check for any "guest" crew members and add them to the pending approval queue
     const guestSignatures = recordData.crewSignatures.filter(sig => sig.isGuest);
@@ -152,7 +145,6 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
           }
         };
         await put(PENDING_CREW_STORE, pending);
-        console.log(`Added "${guest.name}" to pending approvals.`);
       }
     }
 
@@ -163,12 +155,9 @@ export const TalkRecordsProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const registration = await navigator.serviceWorker.ready;
         // FIX: Cast registration to `any` to access the `sync` property, which may not be present in the default ServiceWorkerRegistration type definition.
         await (registration as any).sync.register('sync-talks');
-        console.log('Background sync task registered: sync-talks');
       } catch (error) {
         console.error('Background sync registration failed:', error);
       }
-    } else {
-      console.log('Background Sync not supported by this browser.');
     }
   }, []);
 
